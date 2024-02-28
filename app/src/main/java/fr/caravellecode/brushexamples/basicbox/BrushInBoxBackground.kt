@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -39,7 +41,9 @@ fun BasicBrushInBoxBackground(modifier: Modifier = Modifier) {
     )
 
     Column(
-        modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             text = "All base brush examples", modifier = modifier
@@ -74,6 +78,7 @@ fun TiledBrushInBoxBackground(modifier: Modifier = Modifier) {
 
     Column(
         modifier = Modifier
+            .verticalScroll(rememberScrollState())
             .background(Color.DarkGray)
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -232,6 +237,7 @@ fun CustomBrushInBoxBackground(modifier: Modifier = Modifier) {
     val boxSize = 150.dp
     Column(
         modifier = Modifier
+            .verticalScroll(rememberScrollState())
             .background(Color.DarkGray)
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
