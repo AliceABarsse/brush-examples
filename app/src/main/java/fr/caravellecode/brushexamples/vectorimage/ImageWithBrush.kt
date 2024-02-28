@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -61,7 +62,7 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
             )
         )
     }
-    val polkaDotColor = Color.Black
+    val polkaDotColor = MaterialTheme.colorScheme.onSurface
 
     Column {
         WriteTitleName(titleName = "Draw Image with an all-over dot pattern \nand Red tint, varying BlendMode")
@@ -123,10 +124,10 @@ fun WriteValue(value: String) {
     Text(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.DarkGray)
+            .background(MaterialTheme.colorScheme.secondary)
             .padding(4.dp),
         text = value,
-        color = Color.White
+        color = MaterialTheme.colorScheme.onSecondary
     )
 }
 
@@ -135,11 +136,12 @@ fun WriteTitleName(titleName: String) {
     Text(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.DarkGray)
+            .background(MaterialTheme.colorScheme.secondary)
             .padding(4.dp),
         text = titleName,
-        color = Color.White,
+        color = MaterialTheme.colorScheme.onSecondary,
         textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.titleMedium
     )
 }
 

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -24,10 +26,12 @@ import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import fr.caravellecode.brushexamples.ui.theme.BrushExamplesTheme
+import fr.caravellecode.brushexamples.vectorimage.WriteTitleName
 
 @Composable
 fun BasicBrushInBoxBackground(modifier: Modifier = Modifier) {
@@ -43,23 +47,32 @@ fun BasicBrushInBoxBackground(modifier: Modifier = Modifier) {
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "All base brush examples", modifier = modifier
-        )
 
-        for (brushValue in listOf(
-            Brush.horizontalGradient(colorStops = threeColorStops),
-            Brush.linearGradient(colorStops = threeColorStops),
-            Brush.radialGradient(colorStops = threeColorStops),
-            Brush.sweepGradient(colorStops = colorStopsWithReturnFirstColor),
+        WriteTitleName(titleName = "Base brush examples")
+
+        for (brushValueByName in mapOf(
+            "Horizontal Gradient" to Brush.horizontalGradient(colorStops = threeColorStops),
+            "Vertical (Linear) Gradient" to Brush.linearGradient(colorStops = threeColorStops),
+            "Radial Gradient" to Brush.radialGradient(colorStops = threeColorStops),
+            "Sweep Gradient" to Brush.sweepGradient(colorStops = colorStopsWithReturnFirstColor),
         )) {
             Box(
                 modifier = Modifier
                     .requiredSize(200.dp)
-                    .background(brushValue)
-            )
+                    .background(brush = brushValueByName.value),
+                contentAlignment = Alignment.BottomEnd,
+            ) {
+                Text(
+                    modifier = Modifier.padding(4.dp),
+                    text = brushValueByName.key,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.surface,
+                )
+            }
         }
 
     }
@@ -79,34 +92,44 @@ fun TiledBrushInBoxBackground(modifier: Modifier = Modifier) {
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .background(Color.DarkGray)
+            .background(color = MaterialTheme.colorScheme.inverseSurface)
             .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "All base brush examples", color = Color.White, modifier = modifier
-        )
 
-        for (brushValue in listOf(
-            Brush.horizontalGradient(
+        WriteTitleName(titleName = "Tiled and offset brush examples")
+
+        for (brushValue in mapOf(
+            "Horizontal Gradient, repeated tileMode" to Brush.horizontalGradient(
                 colors = threeColors, endX = tileSize, tileMode = TileMode.Repeated
             ),
-            Brush.linearGradient(
+            "Linear Gradient, mirror tileMode" to Brush.linearGradient(
                 colors = threeColors, end = Offset(tileSize, tileSize), tileMode = TileMode.Mirror
             ),
-            Brush.radialGradient(
+            "Radial, decal tileMode" to Brush.radialGradient(
                 colors = threeColors, center = Offset(tileSize, tileSize), tileMode = TileMode.Decal
             ),
-            Brush.sweepGradient(
+            "Sweep, offset" to Brush.sweepGradient(
                 colorStops = colorStopsWithReturnFirstColor, center = Offset(120f, 450f)
             ),
         )) {
             Box(
                 modifier = Modifier
                     .requiredSize(200.dp)
-                    .border(width = Dp.Hairline, color = Color.White)
-                    .background(brushValue)
-            )
+                    .border(width = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface)
+                    .background(brushValue.value),
+                contentAlignment = Alignment.BottomEnd,
+
+                ) {
+                Text(
+                    modifier = Modifier.padding(4.dp),
+                    text = brushValue.key,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.surface,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
 
     }
@@ -121,137 +144,118 @@ fun CustomBrushInBoxBackground(modifier: Modifier = Modifier) {
     val intervals = 12f
     val customVerticalBrush = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listColors,
-                    from = Offset.Zero,
-                    to = Offset(size.width / intervals, 0f),
-                    tileMode = TileMode.Mirror
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listColors,
+                from = Offset.Zero,
+                to = Offset(size.width / intervals, 0f),
+                tileMode = TileMode.Mirror
+            )
         }
     }
     val customHorizontalBrush = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listOf(Color.White.copy(alpha = 0.5f), Color.Blue.copy(alpha = 0.5f)),
-                    from = Offset.Zero,
-                    to = Offset(0f, size.height / intervals),
-                    tileMode = TileMode.Mirror
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listOf(Color.White.copy(alpha = 0.5f), Color.Blue.copy(alpha = 0.5f)),
+                from = Offset.Zero,
+                to = Offset(0f, size.height / intervals),
+                tileMode = TileMode.Mirror
+            )
         }
     }
     val tilted1BlueBrush = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listColors,
-                    from = Offset.Zero,
-                    to = Offset(size.width / intervals, size.height / intervals),
-                    tileMode = TileMode.Mirror
-                )
-            }
+
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listColors,
+                from = Offset.Zero,
+                to = Offset(size.width / intervals, size.height / intervals),
+                tileMode = TileMode.Mirror
+            )
         }
     }
     val tilted1RedBrush = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listOf(Color.White, Color.Red),
-                    from = Offset.Zero,
-                    to = Offset(size.width / intervals, size.height / intervals),
-                    tileMode = TileMode.Repeated
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listOf(Color.White, Color.Red),
+                from = Offset.Zero,
+                to = Offset(size.width / intervals, size.height / intervals),
+                tileMode = TileMode.Repeated
+            )
         }
     }
     val tilted2RedBrush = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listOf(Color.White.copy(alpha = 0.6f), Color.Red.copy(alpha = 0.4f)),
-                    from = Offset(size.width / intervals, 0f),
-                    to = Offset(0f, size.height / intervals),
-                    tileMode = TileMode.Repeated
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listOf(Color.White.copy(alpha = 0.6f), Color.Red.copy(alpha = 0.4f)),
+                from = Offset(size.width / intervals, 0f),
+                to = Offset(0f, size.height / intervals),
+                tileMode = TileMode.Repeated
+            )
         }
     }
     val tilted1GrayBrush = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listOf(Color.DarkGray, Color.Black),
-                    from = Offset.Zero,
-                    to = Offset(size.width / intervals, size.height / intervals),
-                    tileMode = TileMode.Repeated
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listOf(Color.DarkGray, Color.Black),
+                from = Offset.Zero,
+                to = Offset(size.width / intervals, size.height / intervals),
+                tileMode = TileMode.Repeated
+            )
         }
     }
     val tilted2GrayBrush = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listOf(
-                        Color.DarkGray.copy(alpha = 0.6f),
-                        Color.Black.copy(alpha = 0.4f)
-                    ),
-                    from = Offset(size.width / intervals, 0f),
-                    to = Offset(0f, size.height / intervals),
-                    tileMode = TileMode.Repeated
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listOf(
+                    Color.DarkGray.copy(alpha = 0.6f), Color.Black.copy(alpha = 0.4f)
+                ),
+                from = Offset(size.width / intervals, 0f),
+                to = Offset(0f, size.height / intervals),
+                tileMode = TileMode.Repeated
+            )
         }
     }
     val tilted3ColorBrush1 = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listOf(Color.Blue, Color.White, Color.Yellow),
-                    from = Offset.Zero,
-                    to = Offset(size.width / intervals, size.height / intervals),
-                    tileMode = TileMode.Repeated
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listOf(Color.Blue, Color.White, Color.Yellow),
+                from = Offset.Zero,
+                to = Offset(size.width / intervals, size.height / intervals),
+                tileMode = TileMode.Repeated
+            )
         }
     }
     val tilted3ColorBrush2 = remember {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                return LinearGradientShader(
-                    colors = listOf(
-                        Color.Red.copy(alpha = 0.6f),
-                        Color.Yellow.copy(alpha = 0.1f),
-                        Color.White.copy(alpha = 0.3f)
-                    ),
-                    from = Offset(size.width / intervals, 0f),
-                    to = Offset(0f, size.height / intervals),
-                    tileMode = TileMode.Repeated
-                )
-            }
+            override fun createShader(size: Size): Shader = LinearGradientShader(
+                colors = listOf(
+                    Color.Red.copy(alpha = 0.6f),
+                    Color.Yellow.copy(alpha = 0.1f),
+                    Color.White.copy(alpha = 0.3f)
+                ),
+                from = Offset(size.width / intervals, 0f),
+                to = Offset(0f, size.height / intervals),
+                tileMode = TileMode.Repeated
+            )
         }
     }
     val boxSize = 150.dp
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .background(Color.DarkGray)
+            .background(MaterialTheme.colorScheme.inverseSurface)
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "Custom plaid brush examples", color = Color.White, modifier = modifier
-        )
+
+        WriteTitleName(titleName = "Custom plaid brush examples")
 
         // straight plaid
         Box(
             modifier = Modifier
                 .requiredSize(boxSize)
-                .border(width = Dp.Hairline, color = Color.White)
+                .border(width = Dp.Hairline, color = MaterialTheme.colorScheme.onSurfaceVariant)
         ) {
             Box(
                 modifier = Modifier
@@ -268,7 +272,7 @@ fun CustomBrushInBoxBackground(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .requiredSize(boxSize)
-                .border(width = Dp.Hairline, color = Color.White)
+                .border(width = Dp.Hairline, color = MaterialTheme.colorScheme.onSurfaceVariant)
         ) {
             Box(
                 modifier = Modifier
@@ -285,7 +289,7 @@ fun CustomBrushInBoxBackground(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .requiredSize(boxSize)
-                .border(width = Dp.Hairline, color = Color.White)
+                .border(width = Dp.Hairline, color = MaterialTheme.colorScheme.onSurfaceVariant)
         ) {
             Box(
                 modifier = Modifier
@@ -302,7 +306,7 @@ fun CustomBrushInBoxBackground(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .requiredSize(boxSize)
-                .border(width = Dp.Hairline, color = Color.White)
+                .border(width = Dp.Hairline, color = MaterialTheme.colorScheme.onSurfaceVariant)
         ) {
             Box(
                 modifier = Modifier
@@ -319,7 +323,7 @@ fun CustomBrushInBoxBackground(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .requiredSize(boxSize)
-                .border(width = Dp.Hairline, color = Color.White)
+                .border(width = Dp.Hairline, color = MaterialTheme.colorScheme.onSurfaceVariant)
         ) {
             Box(
                 modifier = Modifier
@@ -340,7 +344,10 @@ fun CustomBrushInBoxBackground(modifier: Modifier = Modifier) {
 @Composable
 fun BasicBrushPreview() {
     BrushExamplesTheme {
-        BasicBrushInBoxBackground()
+        Surface {
+
+            BasicBrushInBoxBackground()
+        }
     }
 }
 
@@ -349,7 +356,9 @@ fun BasicBrushPreview() {
 @Composable
 fun TiledBrushInBoxBackgroundPreview() {
     BrushExamplesTheme {
-        TiledBrushInBoxBackground()
+        Surface {
+            TiledBrushInBoxBackground()
+        }
     }
 }
 
@@ -358,6 +367,9 @@ fun TiledBrushInBoxBackgroundPreview() {
 @Composable
 fun PlaidsBrushPreview() {
     BrushExamplesTheme {
-        CustomBrushInBoxBackground()
+        Surface {
+
+            CustomBrushInBoxBackground()
+        }
     }
 }
