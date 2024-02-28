@@ -19,28 +19,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
+import androidx.compose.ui.graphics.LinearGradientShader
+import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.drawable.toBitmap
 import fr.caravellecode.brushexamples.R
 import fr.caravellecode.brushexamples.ui.theme.BrushExamplesTheme
@@ -67,52 +64,13 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
     val polkaDotColor = Color.Black
 
     Column {
+        WriteTitleName(titleName = "Draw Image with an all-over dot pattern \nand Red tint, varying BlendMode")
+
         FlowRow(
             modifier = Modifier.background(Color.LightGray),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.DarkGray)
-                    .padding(4.dp),
-                text = "Draw Image over an all-over dot pattern \nand use Red tint as a function of BlendMode:",
-                color = Color.White,
-                textAlign = TextAlign.Center,
-            )
-
-            for (blendmode in listOf(
-                BlendMode.Color,
-                BlendMode.Clear,
-                BlendMode.ColorBurn,
-                BlendMode.ColorDodge,
-                BlendMode.Darken,
-                BlendMode.Dst,
-                BlendMode.Difference,
-                BlendMode.DstAtop,
-                BlendMode.DstIn,
-                BlendMode.DstOut,
-                BlendMode.DstOver,
-                BlendMode.Exclusion,
-                BlendMode.Hardlight,
-                BlendMode.Hue,
-                BlendMode.Lighten,
-                BlendMode.Luminosity,
-                BlendMode.Multiply,
-                BlendMode.Modulate,
-                BlendMode.Overlay,
-                BlendMode.Plus,
-                BlendMode.Saturation,
-                BlendMode.SrcIn,
-                BlendMode.Screen,
-                BlendMode.Softlight,
-                BlendMode.Src,
-                BlendMode.SrcAtop,
-                BlendMode.SrcOut,
-                BlendMode.SrcOver,
-                BlendMode.Xor,
-            )) {
+            for (blendMode in listOfAllBlendModes()) {
                 Column(
                     modifier = Modifier
                         .width(intrinsicSize = IntrinsicSize.Min)
@@ -120,14 +78,7 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
                         .border(Dp.Hairline, Color.Black),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.DarkGray)
-                            .padding(4.dp),
-                        text = "$blendmode",
-                        color = Color.White
-                    )
+                    WriteValue("$blendMode")
                     Box(modifier = Modifier
                         .padding(4.dp)
                         .size(50.dp)
@@ -140,7 +91,7 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
                             )
                             drawImage(
                                 image = objectToDrawOnAsImageBitmap,
-                                blendMode = blendmode,
+                                blendMode = blendMode,
                                 dstSize = IntSize(
                                     this@drawWithContent.size.width.roundToInt(),
                                     this@drawWithContent.size.height.roundToInt()
@@ -148,7 +99,8 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
                                 colorFilter = ColorFilter.tint(Color.Red),
                             )
                         }) {
-                        // intentionally empty
+
+                        // Box content intentionally left blank
 
                         /*
                          // NB: th following does not work, BlendMode is only applied to tint,
@@ -166,6 +118,31 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun WriteValue(value: String) {
+    Text(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.DarkGray)
+            .padding(4.dp),
+        text = value,
+        color = Color.White
+    )
+}
+
+@Composable
+fun WriteTitleName(titleName: String) {
+    Text(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.DarkGray)
+            .padding(4.dp),
+        text = titleName,
+        color = Color.White,
+        textAlign = TextAlign.Center,
+    )
+}
+
 @Preview
 @Composable
 fun BrushImagePreview() {
@@ -179,21 +156,38 @@ fun BrushImagePreview() {
 @Composable
 fun BrushGradientImage(modifier: Modifier = Modifier) {
 
-    val threeColorStops = arrayOf(
-        0.0f to Color.Yellow, 0.2f to Color.Red, 1f to Color.Blue
-    )
-
-    val colorStopsWithReturnFirstColor = arrayOf(
-        0.0f to Color.Gray, 0.33f to Color.Red, 0.66f to Color.Yellow, 1f to Color.Gray
-    )
-
     val objectToFill = LocalContext.current.resources.getDrawable(R.drawable.ic_work_24)
+    val intervals = 12f
 
-    val allOverPattern = LocalContext.current.resources.getDrawable(R.drawable.baseline_circle_4)
+    val tilted1GrayBrush = remember {
+        object : ShaderBrush() {
+            override fun createShader(size: Size): Shader {
+                return LinearGradientShader(
+                    colors = listOf(Color.DarkGray, Color.Black),
+                    from = Offset.Zero,
+                    to = Offset(size.width / intervals, size.height / intervals),
+                    tileMode = TileMode.Repeated
+                )
+            }
+        }
+    }
+    val tilted2GrayBrush = remember {
+        object : ShaderBrush() {
+            override fun createShader(size: Size): Shader {
+                return LinearGradientShader(
+                    colors = listOf(
+                        Color.DarkGray.copy(alpha = 0.6f),
+                        Color.Black.copy(alpha = 0.4f)
+                    ),
+                    from = Offset(size.width / intervals, 0f),
+                    to = Offset(0f, size.height / intervals),
+                    tileMode = TileMode.Repeated
+                )
+            }
+        }
+    }
 
     val objectToFillImage = (objectToFill as VectorDrawable).toBitmap().asImageBitmap()
-    val patternImage = (allOverPattern as VectorDrawable).toBitmap().asImageBitmap()
-
 
     Column {
         FlowRow(
@@ -203,60 +197,83 @@ fun BrushGradientImage(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
 
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.DarkGray)
-                    .padding(4.dp),
-                text = "Draw Image with all-over gradient",
-                color = Color.White
-            )
+            WriteTitleName(titleName = "Draw Image with all-over tiled brush, varying BlendMode")
 
-                for (brushValue in listOf(
-                    Brush.linearGradient(colorStops = threeColorStops),
-                )) {
+            for (blendMode in listOfAllBlendModes()) {
+                Column(
+                    modifier = Modifier
+                        .width(intrinsicSize = IntrinsicSize.Min)
+                        .padding(4.dp)
+                        .border(Dp.Hairline, Color.Black),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    WriteValue("$blendMode")
+                    Box(modifier = Modifier
+                        .padding(4.dp)
+                        .size(50.dp)
+                        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                        .drawWithContent {
+                            drawRect(
+                                brush = tilted1GrayBrush,
+                                alpha = 1f,
+                            )
+                            /*
+                            drawRect(
+                                brush = tilted2GrayBrush,
+                                alpha = .5f,
+                            )
 
-                    Column(
-                        modifier = Modifier
-                            .width(intrinsicSize = IntrinsicSize.Min)
-                            .padding(4.dp)
-                            .border(Dp.Hairline, Color.Black),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.DarkGray)
-                                .padding(4.dp), text = "$brushValue", color = Color.White
-                        )
+                             */
+                            drawImage(
+                                image = objectToFillImage,
+                                blendMode = blendMode,
+                                dstSize = IntSize(
+                                    this@drawWithContent.size.width.roundToInt(),
+                                    this@drawWithContent.size.height.roundToInt()
+                                ),
+                            )
 
-                        Box(modifier = Modifier
-                            .padding(4.dp)
-                            .size(50.dp)
-                            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-                            .drawWithContent {
-                                drawRect(
-                                    brush = brushValue,
-                                    alpha = 1f,
-                                )
-                                drawImage(
-                                    image = objectToFillImage,
-                                    blendMode = BlendMode.DstIn,
-                                    dstSize = IntSize(
-                                        this@drawWithContent.size.width.roundToInt(),
-                                        this@drawWithContent.size.height.roundToInt()
-                                    ),
-                                )
-
-                            }) {
-
-
-                        }
+                        }) {
+                        // Box content intentionally left blank
                     }
+                }
             }
         }
     }
 }
+
+@Composable
+private fun listOfAllBlendModes() = listOf(
+    BlendMode.Clear,
+    BlendMode.Color,
+    BlendMode.ColorBurn,
+    BlendMode.ColorDodge,
+    BlendMode.Darken,
+    BlendMode.Difference,
+    BlendMode.Dst,
+    BlendMode.DstAtop,
+    BlendMode.DstIn,
+    BlendMode.DstOut,
+    BlendMode.DstOver,
+    BlendMode.Exclusion,
+    BlendMode.Hardlight,
+    BlendMode.Hue,
+    BlendMode.Lighten,
+    BlendMode.Luminosity,
+    BlendMode.Modulate,
+    BlendMode.Multiply,
+    BlendMode.Overlay,
+    BlendMode.Plus,
+    BlendMode.Saturation,
+    BlendMode.Screen,
+    BlendMode.Softlight,
+    BlendMode.Src,
+    BlendMode.SrcAtop,
+    BlendMode.SrcIn,
+    BlendMode.SrcOut,
+    BlendMode.SrcOver,
+    BlendMode.Xor,
+)
 
 @Preview
 @Composable
