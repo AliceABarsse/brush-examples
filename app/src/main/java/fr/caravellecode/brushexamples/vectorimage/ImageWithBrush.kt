@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -57,8 +58,10 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
     val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
     val polkaDotBrush = remember(polkaDotImageBitmap) {
         ShaderBrush(
-            ImageShader(
-                polkaDotImageBitmap, TileMode.Repeated, TileMode.Repeated
+            shader = ImageShader(
+                image = polkaDotImageBitmap,
+                tileModeX = TileMode.Repeated,
+                tileModeY = TileMode.Repeated
             )
         )
     }
@@ -88,17 +91,19 @@ fun BrushPatternImage(modifier: Modifier = Modifier) {
                             drawRect(
                                 brush = polkaDotBrush,
                                 alpha = 1f,
-                                colorFilter = ColorFilter.tint(polkaDotColor)
-                            )
+                                colorFilter = ColorFilter.tint(polkaDotColor),
+                                )
                             drawImage(
                                 image = objectToDrawOnAsImageBitmap,
-                                blendMode = blendMode,
                                 dstSize = IntSize(
                                     this@drawWithContent.size.width.roundToInt(),
                                     this@drawWithContent.size.height.roundToInt()
                                 ),
                                 colorFilter = ColorFilter.tint(Color.Red),
-                            )
+                                blendMode = blendMode,
+                                )
+
+
                         }) {
 
                         // Box content intentionally left blank
@@ -148,8 +153,11 @@ fun WriteTitleName(titleName: String) {
 @Preview
 @Composable
 fun BrushImagePreview() {
-    BrushExamplesTheme {
-        BrushPatternImage()
+    Surface {
+
+        BrushExamplesTheme {
+            BrushPatternImage()
+        }
     }
 }
 
@@ -219,13 +227,10 @@ fun BrushGradientImage(modifier: Modifier = Modifier) {
                                 brush = tilted1GrayBrush,
                                 alpha = 1f,
                             )
-                            /*
                             drawRect(
                                 brush = tilted2GrayBrush,
                                 alpha = .5f,
                             )
-
-                             */
                             drawImage(
                                 image = objectToFillImage,
                                 blendMode = blendMode,
