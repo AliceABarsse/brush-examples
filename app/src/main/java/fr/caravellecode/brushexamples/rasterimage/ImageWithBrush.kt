@@ -1,4 +1,4 @@
-package fr.caravellecode.brushexamples.vectorimage
+package fr.caravellecode.brushexamples.rasterimage
 
 import android.graphics.drawable.VectorDrawable
 import androidx.compose.foundation.background
@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -23,10 +25,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.BlendMode.Companion.Clear
+import androidx.compose.ui.graphics.BlendMode.Companion.Difference
+import androidx.compose.ui.graphics.BlendMode.Companion.Dst
+import androidx.compose.ui.graphics.BlendMode.Companion.DstIn
+import androidx.compose.ui.graphics.BlendMode.Companion.DstOut
+import androidx.compose.ui.graphics.BlendMode.Companion.Exclusion
+import androidx.compose.ui.graphics.BlendMode.Companion.Hardlight
+import androidx.compose.ui.graphics.BlendMode.Companion.Luminosity
+import androidx.compose.ui.graphics.BlendMode.Companion.Modulate
+import androidx.compose.ui.graphics.BlendMode.Companion.Softlight
+import androidx.compose.ui.graphics.BlendMode.Companion.Src
+import androidx.compose.ui.graphics.BlendMode.Companion.SrcAtop
+import androidx.compose.ui.graphics.BlendMode.Companion.SrcIn
+import androidx.compose.ui.graphics.BlendMode.Companion.SrcOut
+import androidx.compose.ui.graphics.BlendMode.Companion.SrcOver
+import androidx.compose.ui.graphics.BlendMode.Companion.Xor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.graphics.Shader
@@ -35,8 +53,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -45,17 +62,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import fr.caravellecode.brushexamples.R
 import fr.caravellecode.brushexamples.ui.theme.BrushExamplesTheme
+import fr.caravellecode.brushexamples.vectorimage.WriteTitleName
+import fr.caravellecode.brushexamples.vectorimage.WriteValue
+import fr.caravellecode.brushexamples.vectorimage.listOfAllBlendModes
 import kotlin.math.roundToInt
 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun BrushPatternVectorImage(modifier: Modifier = Modifier) {
+fun BrushPatternRasterImage(modifier: Modifier = Modifier) {
 
-    val objectToDrawOnAsDrawable = ContextCompat.getDrawable( LocalContext.current, R.drawable.ic_work_24)
-    val polkaDotAsDrawable =ContextCompat.getDrawable( LocalContext.current, R.drawable.baseline_circle_4)
-    val objectToDrawOnAsImageBitmap =
-        (objectToDrawOnAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
+    val polkaDotAsDrawable = ContextCompat.getDrawable( LocalContext.current, R.drawable.baseline_circle_4)
+    val objectToDrawOnAsImageBitmap = ImageBitmap.imageResource(id = R.mipmap.ic_chair_foreground)
     val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
     val polkaDotBrush = remember(polkaDotImageBitmap) {
         ShaderBrush(
@@ -68,98 +86,71 @@ fun BrushPatternVectorImage(modifier: Modifier = Modifier) {
     }
     val polkaDotColor = MaterialTheme.colorScheme.onSurface
 
-    Column {
-        WriteTitleName(titleName = "Draw Image with an all-over dot pattern \nand Red tint, varying BlendMode")
+    Column (modifier = Modifier.verticalScroll(rememberScrollState(), true),) {
+        WriteTitleName(titleName = "Draw Raster Image with an all-over dot pattern \nand Red tint, varying BlendMode")
 
-        FlowRow(
+        for (blendModeImage in listOfAllBlendModes()
+            .filter { listOf(Clear, DstIn,DstOut, Dst, Modulate, Softlight, Src, SrcAtop, SrcIn, Xor ).contains(it).not() }) {
+
+            FlowRow(
             modifier = Modifier.background(Color.LightGray),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            for (blendMode in listOfAllBlendModes()) {
-                Column(
+                for (blendModeColor in listOfAllBlendModes()
+                   .filter { listOf(Clear, Difference, DstOut, Exclusion, Hardlight, Luminosity, Src, SrcAtop, SrcIn, SrcOver, SrcOut, Xor).contains(it).not() }) {
+
+                    Column(
                     modifier = Modifier
                         .width(intrinsicSize = IntrinsicSize.Min)
                         .padding(4.dp)
                         .border(Dp.Hairline, Color.Black),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    WriteValue("$blendMode")
-                    Box(modifier = Modifier
-                        .padding(4.dp)
-                        .size(50.dp)
-                        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-                        .drawWithContent {
-                            drawRect(
-                                brush = polkaDotBrush,
-                                alpha = 1f,
-                                colorFilter = ColorFilter.tint(polkaDotColor),
+                        WriteValue("img:$blendModeImage\ncol:$blendModeColor")
+                        Box(modifier = Modifier
+                            .size(90.dp)
+                            .graphicsLayer {
+                                compositingStrategy = CompositingStrategy.Offscreen
+                            }
+                            .drawWithContent {
+                                drawRect(
+                                    brush = polkaDotBrush,
+                                    alpha = 1f,
+                                    colorFilter = ColorFilter.tint(polkaDotColor),
                                 )
-                            drawImage(
-                                image = objectToDrawOnAsImageBitmap,
-                                dstSize = IntSize(
-                                    this@drawWithContent.size.width.roundToInt(),
-                                    this@drawWithContent.size.height.roundToInt()
-                                ),
-                                colorFilter = ColorFilter.tint(Color.Red),
-                                blendMode = blendMode,
+                                drawImage(
+                                    image = objectToDrawOnAsImageBitmap,
+                                    blendMode = blendModeImage,
+                                    dstSize = IntSize(
+                                        this@drawWithContent.size.width.roundToInt(),
+                                        this@drawWithContent.size.height.roundToInt()
+                                    ),
+                                    colorFilter = ColorFilter.tint(
+                                        Color.Red.copy(alpha = 0.6f),
+                                        blendModeColor
+                                    ),
                                 )
 
 
-                        }) {
+                            }) {
 
-                        // Box content intentionally left blank
-
-                        /*
-                         // NB: th following does not work, BlendMode is only applied to tint,
-                         // and the Image composable is not visible under opaque rectangle
-                        Image(painter = painterResource(R.drawable.ic_work_24),
-                            contentDescription = "briefcase",
-                            colorFilter = ColorFilter.tint(Color.Red, blendMode = blendmode),
-                        )
-                        */
+                            // Box content intentionally left blank
+                        }
                     }
 
                 }
+                Divider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp, modifier = Modifier.fillMaxWidth())
             }
         }
     }
 }
 
-@Composable
-fun WriteValue(value: String) {
-    Text(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.secondary)
-            .padding(4.dp),
-        text = value,
-        color = MaterialTheme.colorScheme.onSecondary,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-    )
-}
-
-@Composable
-fun WriteTitleName(titleName: String) {
-    Text(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.secondary)
-            .padding(4.dp),
-        text = titleName,
-        color = MaterialTheme.colorScheme.onSecondary,
-        textAlign = TextAlign.Center,
-        style = MaterialTheme.typography.titleMedium
-    )
-}
-
 @Preview
 @Composable
-fun BrushImagePreview() {
+fun BrushRasterImagePreview() {
     Surface {
-
         BrushExamplesTheme {
-            BrushPatternVectorImage()
+            BrushPatternRasterImage()
         }
     }
 }
@@ -167,40 +158,41 @@ fun BrushImagePreview() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun BrushGradientImage(modifier: Modifier = Modifier) {
+fun BrushGradientRasterImage(modifier: Modifier = Modifier) {
 
-    val objectToFill = LocalContext.current.resources.getDrawable(R.drawable.ic_work_24)
     val intervals = 12f
+val color1 = Color(0xFFE6E2CE)
+    val color2 = Color(0xFF70F1F2)
 
-    val tilted1GrayBrush = remember {
+    val tilted1Brush = remember {
         object : ShaderBrush() {
             override fun createShader(size: Size): Shader {
                 return LinearGradientShader(
-                    colors = listOf(Color.DarkGray, Color.Black),
+                    colors = listOf(color1, color2),
                     from = Offset.Zero,
-                    to = Offset(size.width / intervals, size.height / intervals),
-                    tileMode = TileMode.Repeated
+                    to = Offset(0f, size.height / intervals),
+                    tileMode = TileMode.Mirror
                 )
             }
         }
     }
-    val tilted2GrayBrush = remember {
+    val tilted2Brush = remember {
         object : ShaderBrush() {
             override fun createShader(size: Size): Shader {
                 return LinearGradientShader(
                     colors = listOf(
-                        Color.DarkGray.copy(alpha = 0.6f),
-                        Color.Black.copy(alpha = 0.4f)
+                        color1,
+                        color2
                     ),
                     from = Offset(size.width / intervals, 0f),
-                    to = Offset(0f, size.height / intervals),
-                    tileMode = TileMode.Repeated
+                    to = Offset(0f, 0f),
+                    tileMode = TileMode.Mirror
                 )
             }
         }
     }
 
-    val objectToFillImage = (objectToFill as VectorDrawable).toBitmap().asImageBitmap()
+    val objectToFillImage = ImageBitmap.imageResource(id = R.mipmap.ic_chair_foreground)
 
     Column {
         FlowRow(
@@ -210,7 +202,7 @@ fun BrushGradientImage(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
 
-            WriteTitleName(titleName = "Draw Image with all-over tiled brush, varying BlendMode")
+            WriteTitleName(titleName = "Draw Raster Image with all-over tiled brush, varying BlendMode")
 
             for (blendMode in listOfAllBlendModes()) {
                 Column(
@@ -227,11 +219,11 @@ fun BrushGradientImage(modifier: Modifier = Modifier) {
                         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                         .drawWithContent {
                             drawRect(
-                                brush = tilted1GrayBrush,
+                                brush = tilted1Brush,
                                 alpha = 1f,
                             )
                             drawRect(
-                                brush = tilted2GrayBrush,
+                                brush = tilted2Brush,
                                 alpha = .5f,
                             )
                             drawImage(
@@ -252,44 +244,12 @@ fun BrushGradientImage(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun listOfAllBlendModes() = listOf(
-    BlendMode.Clear,
-    BlendMode.Color,
-    BlendMode.ColorBurn,
-    BlendMode.ColorDodge,
-    BlendMode.Darken,
-    BlendMode.Difference,
-    BlendMode.Dst,
-    BlendMode.DstAtop,
-    BlendMode.DstIn,
-    BlendMode.DstOut,
-    BlendMode.DstOver,
-    BlendMode.Exclusion,
-    BlendMode.Hardlight,
-    BlendMode.Hue,
-    BlendMode.Lighten,
-    BlendMode.Luminosity,
-    BlendMode.Modulate,
-    BlendMode.Multiply,
-    BlendMode.Overlay,
-    BlendMode.Plus,
-    BlendMode.Saturation,
-    BlendMode.Screen,
-    BlendMode.Softlight,
-    BlendMode.Src,
-    BlendMode.SrcAtop,
-    BlendMode.SrcIn,
-    BlendMode.SrcOut,
-    BlendMode.SrcOver,
-    BlendMode.Xor,
-)
 
 @Preview
 @Composable
-fun BrushGradientPreview() {
+fun BrushGradientRasterImagePreview() {
     BrushExamplesTheme {
-        BrushGradientImage()
+        BrushGradientRasterImage()
     }
 }
 
