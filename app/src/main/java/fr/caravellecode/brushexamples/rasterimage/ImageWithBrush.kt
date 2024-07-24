@@ -81,7 +81,7 @@ fun BrushPatternRasterImage(modifier: Modifier = Modifier) {
 
     val polkaDotAsDrawable =
         ContextCompat.getDrawable(LocalContext.current, R.drawable.baseline_circle_4)
-    val objectToDrawOnAsImageBitmap = ImageBitmap.imageResource(id = R.mipmap.ic_chair_foreground)
+    val objectToDrawOnAsImageBitmap = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
     val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
     val polkaDotBrush = remember(polkaDotImageBitmap) {
         ShaderBrush(
@@ -221,7 +221,7 @@ fun BrushRasterImagePreview() {
 @Composable
 fun BrushGradientRasterImage(modifier: Modifier = Modifier) {
 
-    val objectToFillImage = ImageBitmap.imageResource(id = R.mipmap.ic_chair_foreground)
+    val objectToFillImage = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
 
     Column {
         FlowRow(
