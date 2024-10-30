@@ -7,12 +7,11 @@ import android.graphics.Canvas
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.PixelCopy
 import android.view.View
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,7 +56,12 @@ fun ShareableContentWithCTA(
     val bitmapCapture = remember {
         BitmapCapture()
     }
-
+    val onShare: () -> Unit = {
+        bitmapCapture.capture()
+        bitmapCapture.imageBitmap?.let {
+            onBitmapCreated(it)
+        }
+    }
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
 
         val stroke = remember {
@@ -65,30 +69,37 @@ fun ShareableContentWithCTA(
                 width = 8f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
             )
         }
-        CaptureContent(modifier = Modifier.drawBehind {
-            drawRoundRect(
-                color = Color.Green, style = stroke, cornerRadius = CornerRadius(
-                    8.dp.toPx()
+        CaptureContent(modifier = Modifier
+            .drawBehind {
+                drawRoundRect(
+                    color = Color.Green, style = stroke, cornerRadius = CornerRadius(
+                        8.dp.toPx()
+                    )
                 )
-            )
-        }
-            .clip(RoundedCornerShape(8.dp)), captureImage = bitmapCapture, usePixelCopy = usePixelCopy) {
+            }
+            .clip(RoundedCornerShape(8.dp)),
+            captureImage = bitmapCapture,
+            usePixelCopy = usePixelCopy) {
             contentToShare()
         }
 
 
-        Button(modifier = Modifier,
-            onClick = {
-            bitmapCapture.capture()
-            bitmapCapture.imageBitmap?.let {
-                onBitmapCreated(it)
-            }}, content = {
-                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text(text = labelShareImage)}
-        )
+
+        ShareButton(onShare)
     }
 }
 
+@Composable
+private fun ShareButton(onShare: () -> Unit) {
+    Button(modifier = Modifier, onClick = onShare) {
+        Icon(
+            Icons.Default.Share,
+            contentDescription = null,
+            modifier = Modifier.padding(end = 8.dp)
+        )
+        Text(text = labelShareImage)
+    }
+}
 
 @Composable
 fun CaptureContent(
@@ -105,20 +116,23 @@ fun CaptureContent(
     }
 
     DisposableEffect(usePixelCopy) {
+        Log.i("Example", "Running Disposable effect")
 
-        captureImage.callback = {
+        captureImage.captureBlock = {
             composableBounds?.let { realBounds ->
                 if (realBounds.width == 0f || realBounds.height == 0f) return@let
                 val bounds =
                     if (realBounds.height > maxHeight) realBounds.copy(bottom = realBounds.top + maxHeight)
                     else realBounds
-                view.capture(bounds = bounds, onCaptured = { state: CaptureState ->
-                    captureImage.captureState.value = state
-
-                    if (state is CaptureState.Success) {
-                        captureImage.bitmapState.value = state.data
-                    }
-                }, usePixelCopy = usePixelCopy)
+                view.capture(
+                    bounds = bounds,
+                    onCaptured = { state: CaptureState ->
+                        captureImage.captureState.value = state
+                        if (state is CaptureState.Success) {
+                            captureImage.bitmapState.value = state.data
+                        }
+                    },
+                    usePixelCopy = usePixelCopy)
             }
         }
 
@@ -130,7 +144,7 @@ fun CaptureContent(
                 }
             }
             captureImage.bitmapState.value = null
-            captureImage.callback = null
+            captureImage.captureBlock = null
         }
     }
 
@@ -149,10 +163,10 @@ fun CaptureContent(
 class BitmapCapture {
     val captureState = mutableStateOf<CaptureState>(CaptureState.Initial)
     val bitmapState = mutableStateOf<Bitmap?>(null)
-    internal var callback: (() -> Unit)? = null
+    internal var captureBlock: (() -> Unit)? = null
 
     fun capture() {
-        callback?.invoke()
+        captureBlock?.invoke()
     }
 
     val imageBitmap: ImageBitmap?
@@ -165,7 +179,6 @@ sealed class CaptureState {
     data class Error(val exception: Exception) : CaptureState()
     data class Success(val data: Bitmap) : CaptureState()
 }
-
 
 
 /**
@@ -196,31 +209,34 @@ fun View.capture(
             // this does not work with a dialog window, so use SurfaceView instead
 
             if (activity != null) {
-                PixelCopy.request(
-                    /* source = */ activity.window,
-                    /* srcRect = */ android.graphics.Rect(
+                PixelCopy.request(/* source = */ activity.window,/* srcRect = */
+                    android.graphics.Rect(
                         bounds.left.toInt(),
                         bounds.top.toInt(),
                         bounds.right.toInt(),
                         bounds.bottom.toInt()
-                    ), /* dest = */ bitmap, /* listener = */ { status ->
+                    ), /* dest = */
+                    bitmap, /* listener = */
+                    { status ->
                         onCopyFinished(status, onCaptured, bitmap)
 
-                    }, /* listenerThread = */ Handler(Looper.getMainLooper())
+                    }, /* listenerThread = */
+                    Handler(Looper.getMainLooper())
                 )
             }
         } else {
 
             val canvas = Canvas(bitmap).apply {
-                translate(-bounds.left, -bounds.top)
+                scale(0.8f, 0.8f)
+                translate(-bounds.left * 0.8f, -bounds.top / 2)
             }
 
             this.draw(canvas)
             canvas.setBitmap(null)
-            onCaptured.invoke(CaptureState.Success(bitmap))
+            onCaptured(CaptureState.Success(bitmap))
         }
     } catch (e: Exception) {
-        onCaptured.invoke(CaptureState.Error(e))
+        onCaptured(CaptureState.Error(e))
     }
 }
 

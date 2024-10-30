@@ -1,6 +1,8 @@
 package fr.caravellecode.brushexamples.captureImage
 
+import android.graphics.Bitmap
 import android.graphics.drawable.VectorDrawable
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -31,9 +33,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
@@ -81,18 +85,32 @@ fun ExampleCaptureImage(modifier: Modifier = Modifier) {
             )
         }
         bitmapToShow?.let { image ->
-            Box(
-                Modifier
-                    .size(250.dp)
-                    .border(20.dp, MaterialTheme.colorScheme.secondary)
-                    .drawWithContent {
-                        drawImage(
-                            image, dstSize = IntSize(
-                                this@drawWithContent.size.width.roundToInt(),
-                                this@drawWithContent.size.height.roundToInt()
-                            )
-                        )
-                    })
+
+            if (image.asAndroidBitmap().isRecycled) {
+                bitmapToShow = null
+                Text("Image was recycled")
+            } else {
+                Box(
+                    Modifier
+                        .size(250.dp)
+                        .border(20.dp, MaterialTheme.colorScheme.secondary)
+                        .drawWithContent {
+
+                            if (image.asAndroidBitmap().isRecycled) {
+
+                                bitmapToShow = null
+                                Log.w("Example", "Image was recycled")
+                            } else {
+
+                                drawImage(
+                                    image, dstSize = IntSize(
+                                        this@drawWithContent.size.width.roundToInt(),
+                                        this@drawWithContent.size.height.roundToInt()
+                                    )
+                                )
+                            }
+                        })
+            }
             Button(onClick = { bitmapToShow = null }) { Text("clear image") }
 
         }
