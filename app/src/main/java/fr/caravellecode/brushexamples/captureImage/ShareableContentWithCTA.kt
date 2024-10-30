@@ -1,28 +1,24 @@
-package fr.caravellecode.brushexamples
+package fr.caravellecode.brushexamples.captureImage
 
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.hardware.camera2.CaptureResult
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.PixelCopy
-import android.view.SurfaceView
 import android.view.View
-import android.view.WindowManager
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,50 +27,65 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
+
+private const val labelShareImage = "Share this image"
 
 @Composable
 fun ShareableContentWithCTA(
     modifier: Modifier = Modifier,
+    usePixelCopy: Boolean,
     onBitmapCreated: (ImageBitmap) -> Unit,
     contentToShare: @Composable () -> Unit,
 ) {
-    val context = LocalContext.current
-    val bitmapCapture = rememberBitmapCapture()
+    val bitmapCapture = remember {
+        BitmapCapture()
+    }
 
-    Column(modifier = modifier) {
-        CaptureContent(captureImage = bitmapCapture) {
+    Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+
+        val stroke = remember {
+            Stroke(
+                width = 8f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+            )
+        }
+        CaptureContent(modifier = Modifier.drawBehind {
+            drawRoundRect(
+                color = Color.Green, style = stroke, cornerRadius = CornerRadius(
+                    8.dp.toPx()
+                )
+            )
+        }
+            .clip(RoundedCornerShape(8.dp)), captureImage = bitmapCapture, usePixelCopy = usePixelCopy) {
             contentToShare()
         }
 
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) {
-                contentDescription = "Share this image"
-            }
-            .clickable(onClick = {
-                bitmapCapture.capture()
-                bitmapCapture.imageBitmap?.let {
-                    onBitmapCreated(it)
-                }
-            }), horizontalArrangement = Arrangement.End) {
-            Text(text = "Share this image")
-            Spacer(modifier = Modifier.width(4.dp))
-            Icon(Icons.Default.Share, contentDescription = null)
-        }
+
+        Button(modifier = Modifier,
+            onClick = {
+            bitmapCapture.capture()
+            bitmapCapture.imageBitmap?.let {
+                onBitmapCreated(it)
+            }}, content = {
+                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                Text(text = labelShareImage)}
+        )
     }
 }
 
@@ -83,6 +94,7 @@ fun ShareableContentWithCTA(
 fun CaptureContent(
     modifier: Modifier = Modifier,
     captureImage: BitmapCapture,
+    usePixelCopy: Boolean,
     content: @Composable () -> Unit,
 ) {
     val view: View = LocalView.current
@@ -92,7 +104,7 @@ fun CaptureContent(
         mutableStateOf<Rect?>(null)
     }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(usePixelCopy) {
 
         captureImage.callback = {
             composableBounds?.let { realBounds ->
@@ -100,13 +112,13 @@ fun CaptureContent(
                 val bounds =
                     if (realBounds.height > maxHeight) realBounds.copy(bottom = realBounds.top + maxHeight)
                     else realBounds
-                view.capture(bounds) { state: CaptureState ->
-                    captureImage.imageState.value = state
+                view.capture(bounds = bounds, onCaptured = { state: CaptureState ->
+                    captureImage.captureState.value = state
 
                     if (state is CaptureState.Success) {
                         captureImage.bitmapState.value = state.data
                     }
-                }
+                }, usePixelCopy = usePixelCopy)
             }
         }
 
@@ -134,31 +146,17 @@ fun CaptureContent(
 }
 
 
-@Composable
-fun rememberBitmapCapture() = remember {
-    BitmapCapture()
-}
-
-
-/**
- * Image of composable to be shared
- */
 class BitmapCapture {
-    val imageState = mutableStateOf<CaptureState>(CaptureState.Initial)
-
+    val captureState = mutableStateOf<CaptureState>(CaptureState.Initial)
     val bitmapState = mutableStateOf<Bitmap?>(null)
-
     internal var callback: (() -> Unit)? = null
 
     fun capture() {
         callback?.invoke()
     }
 
-    private val bitmap: Bitmap?
-        get() = bitmapState.value
-
     val imageBitmap: ImageBitmap?
-        get() = bitmap?.asImageBitmap()
+        get() = bitmapState.value?.asImageBitmap()
 }
 
 
@@ -173,10 +171,12 @@ sealed class CaptureState {
 /**
  * Currently only works to capture Composable
  * as Bitmap for Activity window, does not work for Dialog window.
+ * By default, it will use View.draw(Canvas), unless usePixelCopy is true.
  */
 fun View.capture(
     bounds: Rect,
-    bitmapCallback: (CaptureState) -> Unit,
+    onCaptured: (CaptureState) -> Unit,
+    usePixelCopy: Boolean,
 ) {
 
     val activity = this.context.findActivity()
@@ -190,7 +190,7 @@ fun View.capture(
         )
 
         // PixelCopy does not suffer from bad compositing outcome like View.draw(Canvas) does
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (usePixelCopy) {
 
             // Use window to capture display in Activity,
             // this does not work with a dialog window, so use SurfaceView instead
@@ -204,12 +204,11 @@ fun View.capture(
                         bounds.right.toInt(),
                         bounds.bottom.toInt()
                     ), /* dest = */ bitmap, /* listener = */ { status ->
-                        onCopyFinished(status, bitmapCallback, bitmap)
+                        onCopyFinished(status, onCaptured, bitmap)
 
                     }, /* listenerThread = */ Handler(Looper.getMainLooper())
                 )
             }
-
         } else {
 
             val canvas = Canvas(bitmap).apply {
@@ -218,10 +217,10 @@ fun View.capture(
 
             this.draw(canvas)
             canvas.setBitmap(null)
-            bitmapCallback.invoke(CaptureState.Success(bitmap))
+            onCaptured.invoke(CaptureState.Success(bitmap))
         }
     } catch (e: Exception) {
-        bitmapCallback.invoke(CaptureState.Error(e))
+        onCaptured.invoke(CaptureState.Error(e))
     }
 }
 
@@ -232,16 +231,16 @@ private fun Context.findActivity(): Activity? = when (this) {
 
 private fun onCopyFinished(
     status: Int,
-    bitmapCallback: (CaptureState) -> Unit,
+    onCaptured: (CaptureState) -> Unit,
     bitmap: Bitmap,
 ) {
     when (status) {
         PixelCopy.SUCCESS -> {
-            bitmapCallback.invoke(CaptureState.Success(bitmap))
+            onCaptured(CaptureState.Success(bitmap))
         }
 
         PixelCopy.ERROR_DESTINATION_INVALID -> {
-            bitmapCallback.invoke(
+            onCaptured(
                 CaptureState.Error(
                     Exception(
                         "The destination isn't a valid copy target. " + "If the destination is a bitmap this can occur " + "if the bitmap is too large for the hardware to " + "copy to. " + "It can also occur if the destination " + "has been destroyed"
@@ -251,7 +250,7 @@ private fun onCopyFinished(
         }
 
         PixelCopy.ERROR_SOURCE_INVALID -> {
-            bitmapCallback.invoke(
+            onCaptured(
                 CaptureState.Error(
                     Exception(
                         "It is not possible to copy from the source. " + "This can happen if the source is " + "hardware-protected or destroyed."
@@ -261,7 +260,7 @@ private fun onCopyFinished(
         }
 
         PixelCopy.ERROR_TIMEOUT -> {
-            bitmapCallback.invoke(
+            onCaptured(
                 CaptureState.Error(
                     Exception(
                         "A timeout occurred while trying to acquire a buffer " + "from the source to copy from."
@@ -271,7 +270,7 @@ private fun onCopyFinished(
         }
 
         PixelCopy.ERROR_SOURCE_NO_DATA -> {
-            bitmapCallback.invoke(
+            onCaptured(
                 CaptureState.Error(
                     Exception(
                         "The source has nothing to copy from. " + "When the source is a Surface this means that " + "no buffers have been queued yet. " + "Wait for the source to produce " + "a frame and try again."
@@ -281,7 +280,7 @@ private fun onCopyFinished(
         }
 
         else -> {
-            bitmapCallback.invoke(
+            onCaptured(
                 CaptureState.Error(
                     Exception(
                         "The pixel copy request failed with an unknown error."

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.graphics.Shader
@@ -103,8 +104,6 @@ fun BrushPatternVectorImage(modifier: Modifier = Modifier) {
                                 colorFilter = ColorFilter.tint(Color.Red),
                                 blendMode = blendMode,
                                 )
-
-
                         }) {
 
                         // Box content intentionally left blank
@@ -221,34 +220,44 @@ fun BrushGradientImage(modifier: Modifier = Modifier) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     WriteValue("$blendMode")
-                    Box(modifier = Modifier
-                        .padding(4.dp)
-                        .size(50.dp)
-                        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-                        .drawWithContent {
-                            drawRect(
-                                brush = tilted1GrayBrush,
-                                alpha = 1f,
-                            )
-                            drawRect(
-                                brush = tilted2GrayBrush,
-                                alpha = .5f,
-                            )
-                            drawImage(
-                                image = objectToFillImage,
-                                blendMode = blendMode,
-                                dstSize = IntSize(
-                                    this@drawWithContent.size.width.roundToInt(),
-                                    this@drawWithContent.size.height.roundToInt()
-                                ),
-                            )
-
-                        }) {
-                        // Box content intentionally left blank
-                    }
+                    ImageInBox(tilted1GrayBrush, tilted2GrayBrush, objectToFillImage, blendMode)
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ImageInBox(
+    tilted1GrayBrush: ShaderBrush,
+    tilted2GrayBrush: ShaderBrush,
+    objectToFillImage: ImageBitmap,
+    blendMode: BlendMode,
+) {
+    Box(modifier = Modifier
+        .padding(4.dp)
+        .size(50.dp)
+        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+        .drawWithContent {
+            drawRect(
+                brush = tilted1GrayBrush,
+                alpha = 1f,
+            )
+            drawRect(
+                brush = tilted2GrayBrush,
+                alpha = .5f,
+            )
+            drawImage(
+                image = objectToFillImage,
+                blendMode = blendMode,
+                dstSize = IntSize(
+                    this@drawWithContent.size.width.roundToInt(),
+                    this@drawWithContent.size.height.roundToInt()
+                ),
+            )
+
+        }) {
+        // Box content intentionally left blank
     }
 }
 

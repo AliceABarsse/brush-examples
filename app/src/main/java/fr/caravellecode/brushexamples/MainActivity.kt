@@ -3,6 +3,7 @@ package fr.caravellecode.brushexamples
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,10 +15,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import fr.caravellecode.brushexamples.captureImage.ExampleCaptureImage
 import fr.caravellecode.brushexamples.rasterimage.BrushGradientRasterImage
 import fr.caravellecode.brushexamples.rasterimage.BrushPatternRasterImage
 import fr.caravellecode.brushexamples.rasterimage.BrushPatternRasterImageWithHighlight
@@ -34,19 +37,23 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     var pickExample by remember {
-                        mutableStateOf(0)
+                        mutableIntStateOf(0)
                     }
                    Column {
-
                        Row(modifier = Modifier.fillMaxWidth()) {
-                           Button(onClick = { pickExample = 1 }) {
-                               Text(text = "Raster Image")
+
+                           Button(modifier = Modifier.weight(weight = (1f/4)),
+                               onClick = { pickExample = 1 }) {
+                               Text(text = "Blend 1")
                            }
-                           Button(onClick = { pickExample = 2 }) {
-                               Text(text = "Gradient Raster Image")
+                           Button(modifier = Modifier.weight(weight = (1f/4)),onClick = { pickExample = 2 }) {
+                               Text(text = "Blend 2")
                            }
-                           Button(onClick = { pickExample = 3 }) {
-                               Text(text = "Raster Image With Highlight")
+                           Button(modifier = Modifier.weight(weight = (1f/4)),onClick = { pickExample = 3 }) {
+                               Text(text = "Blend 3")
+                           }
+                           Button(modifier = Modifier.weight(weight = (1f/4)),onClick = { pickExample = 4 }) {
+                               Text(text = "Capture image")
                            }
                        }
                        Divider(modifier = Modifier.fillMaxWidth())
@@ -54,6 +61,7 @@ class MainActivity : ComponentActivity() {
                            1 -> BrushPatternRasterImage()
                            2 -> BrushGradientRasterImage()
                            3 -> BrushPatternRasterImageWithHighlight()
+                           4 -> ExampleCaptureImage()
                            else -> ShowText()
                        }
                    }
