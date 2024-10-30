@@ -3,6 +3,7 @@ package fr.caravellecode.brushexamples.rasterimage
 import android.graphics.drawable.VectorDrawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.BlendMode.Companion.Clear
 import androidx.compose.ui.graphics.BlendMode.Companion.Difference
 import androidx.compose.ui.graphics.BlendMode.Companion.Dst
@@ -47,7 +49,13 @@ import androidx.compose.ui.graphics.BlendMode.Companion.SrcIn
 import androidx.compose.ui.graphics.BlendMode.Companion.SrcOut
 import androidx.compose.ui.graphics.BlendMode.Companion.SrcOver
 import androidx.compose.ui.graphics.BlendMode.Companion.Xor
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Black
+import androidx.compose.ui.graphics.Color.Companion.Green
+import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.graphics.Color.Companion.Red
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
@@ -92,37 +100,40 @@ fun BrushPatternRasterImage(modifier: Modifier = Modifier) {
             )
         )
     }
-    val polkaDotColor = MaterialTheme.colorScheme.onSurface
+
+    val polkaDotColor = Red
+    val tintColor = Black
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState(), true)) {
-        WriteTitleName(titleName = "Draw Raster Image with an all-over dot pattern \nand Red tint, varying BlendMode")
+        WriteTitleName(titleName = "Draw Raster Image with an all-over dot pattern \nand some tint, varying BlendMode")
+
         FlowRow(
-            modifier = Modifier.background(Color.LightGray),
+            modifier = Modifier.background(LightGray),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            for (blendModeImage in listOfAllBlendModes()
-                .filter {
+            for (blendModeImage in listOfAllBlendModes().filter {
                     listOf(
                         Clear,
                         Dst,
                         DstIn,
-                         DstOut,
-                         DstOver,
-                         Modulate,
-                         Softlight,
+                        DstOut,
+                        DstOver,
+                        Modulate,
+                        Softlight,
                         Src,
                         SrcAtop,
-                         SrcIn,
-                         SrcOver,
-                         Xor
+                        SrcIn,
+                        SrcOver,
+                        Xor
                     ).contains(it).not()
                 }) {
 
-                for (blendModeColor in listOfAllBlendModes().filter {
-                    val not = listOf(
+                for (blendModeColor in allBlendModes().filterNot {
+                    listOf(
                         Clear,
                         Difference,
-                        Dst, DstAtop,
+                        Dst,
+                        DstAtop,
                         DstIn,
                         DstOut,
                         DstOver,
@@ -131,77 +142,116 @@ fun BrushPatternRasterImage(modifier: Modifier = Modifier) {
                         Hue,
                         Luminosity,
                         Saturation,
-                        Src,SrcAtop,
+                        Src, SrcAtop,
                         SrcIn,
                         SrcOver,
-                        SrcOut,
-                        Xor
-                    ).contains(it).not()
-                    not
+                        Xor,
+                    ).contains(it)
                 }) {
-                    Column(
-                        modifier = Modifier
-                            .width(intrinsicSize = IntrinsicSize.Min)
-                            .padding(4.dp)
-                            .border(Dp.Hairline, Color.Black),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.secondary)
-                                .padding(start = 4.dp),
-                            text = "img: $blendModeImage",
-                            color = MaterialTheme.colorScheme.onSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.secondary)
-                                .padding(start = 4.dp),
-                            text = "col: $blendModeColor",
-                            color = MaterialTheme.colorScheme.onSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                        Box(modifier = Modifier
-                            .size(90.dp)
-                            .graphicsLayer {
-                                compositingStrategy = CompositingStrategy.Offscreen
-                            }
-                            .drawWithContent {
-                                drawRect(
-                                    brush = polkaDotBrush,
-                                    alpha = 1f,
-                                    colorFilter = ColorFilter.tint(polkaDotColor),
-                                )
-                                drawImage(
-                                    image = objectToDrawOnAsImageBitmap,
-                                    blendMode = blendModeImage,
-                                    dstSize = IntSize(
-                                        this@drawWithContent.size.width.roundToInt(),
-                                        this@drawWithContent.size.height.roundToInt()
-                                    ),
-                                    colorFilter = ColorFilter.tint(
-                                        Color.Red, blendModeColor
-                                    ),
-                                )
+                    for (blendModeMotif in allBlendModes().filterNot {
+                        listOf(
+                            Clear,
+                            Difference,
+                            Dst,
+                            DstAtop,
+                            DstIn,
+                            DstOut,
+                            DstOver,
+                            Exclusion,
+                            Hardlight,
+                            Hue,
+                            Luminosity,
+                            Saturation,
+                            Src,
+                            SrcAtop,
+                            SrcIn,
+                            SrcOut,
+                            Xor,
+                        ).contains(it)
+                    }) {
 
 
-                            }) // Box content intentionally left blank
+                        Column(
+                            modifier = Modifier
+                                .width(intrinsicSize = IntrinsicSize.Min)
+                                .padding(4.dp)
+                                .border(Dp.Hairline, Black),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            ShowValueText("img: $blendModeImage")
+                            ShowValueText("col: $blendModeColor")
+                            ShowValueText("motif tint: $blendModeMotif")
+
+                            Box(modifier = Modifier
+                                .size(90.dp)
+                                .graphicsLayer {
+                                    compositingStrategy = CompositingStrategy.Offscreen
+                                }
+                                .drawWithContent {
+                                    drawRect(
+                                        brush = polkaDotBrush,
+                                        alpha = 1f,
+                                        colorFilter = ColorFilter.tint(
+                                            polkaDotColor, blendModeMotif
+                                        )
+                                    )
+                                    drawImage(
+                                        image = objectToDrawOnAsImageBitmap,
+                                        blendMode = blendModeImage,
+                                        dstSize = IntSize(
+                                            this@drawWithContent.size.width.roundToInt(),
+                                            this@drawWithContent.size.height.roundToInt()
+                                        ),
+                                        colorFilter = ColorFilter.tint(
+                                            tintColor, blendModeColor
+                                        ),
+                                    )
+                                }) // Box content intentionally left blank
+                        }
+
                     }
 
                 }
-                Divider(
-                    color = MaterialTheme.colorScheme.primary,
-                    thickness = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+
             }
+            Divider(
+                color = MaterialTheme.colorScheme.primary,
+                thickness = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun allBlendModes() = listOf(
+    Clear,
+    Difference,
+    Dst,
+    DstAtop,
+    DstIn,
+    DstOut,
+    DstOver,
+    Exclusion,
+    Hardlight,
+    Hue,
+    Luminosity,
+    Saturation,
+    Src,
+    SrcAtop,
+    SrcIn,
+    SrcOut,
+    SrcOver,
+    Xor,
+)
+
+@Preview
+@Composable
+fun BrushRasterImageHighlightPreview() {
+    Surface {
+        BrushExamplesTheme {
+            BrushPatternRasterImageWithHighlight()
         }
     }
 }
@@ -227,7 +277,7 @@ fun BrushGradientRasterImage(modifier: Modifier = Modifier) {
         FlowRow(
             modifier = Modifier
                 .padding(4.dp)
-                .background(Color.LightGray),
+                .background(LightGray),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
 
@@ -238,7 +288,7 @@ fun BrushGradientRasterImage(modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .width(intrinsicSize = IntrinsicSize.Min)
                         .padding(4.dp)
-                        .border(Dp.Hairline, Color.Black),
+                        .border(Dp.Hairline, Black),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     WriteValue("$blendMode")
@@ -311,3 +361,252 @@ fun BrushGradientRasterImagePreview() {
     }
 }
 
+@Composable
+fun BasicBlack(
+    objectToDrawOnAsImageBitmap: ImageBitmap,
+    tintColor: Color,
+    polkaDotBrush: Brush,
+    polkaDotColor: Color,
+    blendModeMotifRect: BlendMode,
+) {
+    Column(
+        modifier = Modifier
+            .width(intrinsicSize = IntrinsicSize.Min)
+            .padding(4.dp)
+            .border(Dp.Hairline, Black),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ShowValueText("dots: $blendModeMotifRect")
+        ShowValueText("col: Black")
+        ShowValueText("lght: none")
+        ShowValueText("LTint: none")
+        Box(modifier = Modifier
+            .size(90.dp)
+            .graphicsLayer {
+                compositingStrategy = CompositingStrategy.Offscreen
+            }
+            .drawWithContent {
+
+                // no blendmode on first image
+                drawImage(
+                    image = objectToDrawOnAsImageBitmap,
+                    dstSize = IntSize(
+                        this@drawWithContent.size.width.roundToInt(),
+                        this@drawWithContent.size.height.roundToInt()
+                    ),
+                    colorFilter = ColorFilter.tint(
+                        tintColor, Modulate
+                    ),
+                )
+
+                drawRect(
+                    blendMode = SrcAtop, // only show parts that cover precedent image
+                    brush = polkaDotBrush,
+                    alpha = 1f,
+                    colorFilter = ColorFilter.tint(
+                        polkaDotColor, blendModeMotifRect
+                    ),
+                )
+
+
+            }) // Box content intentionally left blank
+
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun BrushPatternRasterImageWithHighlight(modifier: Modifier = Modifier) {
+
+    val polkaDotAsDrawable =
+        ContextCompat.getDrawable(LocalContext.current, R.drawable.baseline_circle_4)
+    val objectToDrawOnAsImageBitmap = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
+    val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
+    val polkaDotBrush = remember(polkaDotImageBitmap) {
+        ShaderBrush(
+            shader = ImageShader(
+                image = polkaDotImageBitmap,
+                tileModeX = TileMode.Repeated,
+                tileModeY = TileMode.Repeated
+            )
+        )
+    }
+
+    val polkaDotColor = Red
+    val tintColor = White //Black //Blue
+    val selected = mutableListOf<String>()
+
+    Column(modifier = Modifier.verticalScroll(rememberScrollState(), true)) {
+        WriteTitleName(titleName = "Draw Raster Image with an all-over White dot pattern \nand darkBlue tint, varying BlendMode")
+        FlowRow(
+            modifier = Modifier.background(Green),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+
+            BasicBlack(
+                objectToDrawOnAsImageBitmap = objectToDrawOnAsImageBitmap,
+                tintColor = tintColor,
+                polkaDotBrush = polkaDotBrush,
+                polkaDotColor = polkaDotColor,
+                blendModeMotifRect = SrcAtop
+            )
+
+            for (blendModeHighlight in allBlendModes().filterNot {
+                listOf(
+                    Clear,
+                    Dst,
+                    DstAtop,
+                    DstIn,
+                    DstOut,
+                    Hue,
+                    Src,
+                    SrcIn,
+                    SrcOut,
+                    Xor,
+                    /*
+                    DstOver,
+                    Exclusion,
+                    SrcAtop,
+                    SrcOver,
+                     */
+                ).contains(it)
+            }) {
+
+
+                for (blendModeMotifRect in allBlendModes().filterNot {
+                    listOf(
+                        Clear,
+                        Difference,
+                        Dst,
+                        DstAtop,
+                        DstIn,
+                        DstOut,
+                        DstOver,
+                        Exclusion,
+                        Hardlight,
+                        Hue,
+                        Luminosity,
+                        Saturation,
+                        Src,
+                        SrcOut,
+                        SrcOver,
+                        Xor,
+                        /*
+                        SrcAtop,
+                        SrcIn,
+                         */
+                    ).contains(it)
+                }) {
+
+                    for (blendModeHighlightTint in allBlendModes().filterNot {
+                        listOf(
+                            Clear,
+                            Dst,
+                            SrcOut,
+                            Xor,
+
+                            /* DstAtop,
+                             DstIn,
+                             DstOut,
+                             DstOver,
+                             Hardlight,
+                             Hue,
+                             Luminosity,
+                             Saturation,
+                             Src,
+                             SrcAtop,
+                             SrcIn,
+                             SrcOver,
+                             */
+                        ).contains(it)
+                    }) {
+
+                        for (blendModeColor in listOf(Modulate)) {
+
+                            Column(
+                                modifier = Modifier
+                                    .width(intrinsicSize = IntrinsicSize.Min)
+                                    .padding(4.dp)
+                                    .border(Dp.Hairline, Black)
+                                    .clickable { selected.add("dots") },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                ShowValueText("dots: $blendModeMotifRect")
+                                ShowValueText("col: $blendModeColor")
+                                ShowValueText("lght: $blendModeHighlight")
+                                ShowValueText("LTint: $blendModeHighlightTint")
+                                Box(modifier = Modifier
+                                    .size(90.dp)
+                                    .graphicsLayer {
+                                        compositingStrategy = CompositingStrategy.Offscreen
+                                    }
+                                    .drawWithContent {
+
+                                        // no blendmode on first image
+                                        drawImage(
+                                            image = objectToDrawOnAsImageBitmap,
+                                            dstSize = IntSize(
+                                                this@drawWithContent.size.width.roundToInt(),
+                                                this@drawWithContent.size.height.roundToInt()
+                                            ),
+                                            colorFilter = ColorFilter.tint(
+                                                tintColor, blendModeColor
+                                            ),
+                                        )
+
+                                        // Add white version for lightening of drawing
+                                        drawImage(
+                                            image = objectToDrawOnAsImageBitmap,
+                                            blendMode = blendModeHighlight,
+                                            dstSize = IntSize(
+                                                this@drawWithContent.size.width.roundToInt(),
+                                                this@drawWithContent.size.height.roundToInt()
+                                            ),
+                                            colorFilter = ColorFilter.tint(
+                                                // Test with Black, White, Yellow (complementary for Blue tint of object), and various alpha
+                                                // complementary color in subtractive mode; for Blue -> Yellow
+                                                Black.copy(alpha = 0.4f), blendModeHighlightTint
+                                            ),
+                                        )
+
+                                        drawRect(
+                                            blendMode = SrcAtop, // only show parts that cover precedent image
+                                            brush = polkaDotBrush,
+                                            alpha = 1f,
+                                            colorFilter = ColorFilter.tint(
+                                                polkaDotColor, blendModeMotifRect
+                                            ),
+                                        )
+
+
+                                    }) // Box content intentionally left blank
+                            }
+
+                        }
+                    } //  loop
+
+                }
+                Divider(
+                    color = MaterialTheme.colorScheme.primary,
+                    thickness = 1.dp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } // loop
+        }
+    }
+}
+
+@Composable
+private fun ShowValueText(text: String) {
+    Text(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.secondary)
+            .padding(start = 4.dp),
+        text = text,
+        color = MaterialTheme.colorScheme.onSecondary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        style = MaterialTheme.typography.labelSmall
+    )
+}
