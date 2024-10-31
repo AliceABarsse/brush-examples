@@ -1,80 +1,88 @@
 package fr.caravellecode.brushexamples.captureImage
 
-import android.graphics.Bitmap
 import android.graphics.drawable.VectorDrawable
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
+import androidx.compose.ui.graphics.LinearGradientShader
+import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.drawText
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import fr.caravellecode.brushexamples.R
-import fr.caravellecode.brushexamples.ui.theme.BrushExamplesTheme
 import kotlin.math.roundToInt
 
 @Composable
-fun ExampleCaptureImage(modifier: Modifier = Modifier) {
+internal fun ExampleCaptureImage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 
     var bitmapToShow by remember { mutableStateOf<ImageBitmap?>(null) }
-    var usePixelCopy by remember { mutableStateOf(false) }
+    var exportMethod by remember { mutableStateOf<ExportMethod?>(null) }
 
-    Column (modifier = Modifier.fillMaxWidth())
-    {
-        LabelledCheckbox(
-            modifier,
-            value = usePixelCopy,
-            onSetValue = { usePixelCopy = it },
-            label = "Check to use PixelCopy, uncheck to use View.draw(Canvas)"
-        )
-        ShareableContentWithCTA(modifier = modifier.padding(8.dp),
-            usePixelCopy = usePixelCopy,
-            onBitmapCreated = { bitmapToShow = it }) {
-            DrawImage()
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .background(MaterialTheme.colorScheme.surface)) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Parameter describing the export method
+            MethodSelectorRadioButtons(
+                Modifier.padding(4.dp),
+                value = exportMethod,
+                onSetValue = { exportMethod = it },
+                label = "Select an export method"
+            )
+
+            // Wrap the content to share in this composable
+            ExportableImageWithCTA(modifier = modifier.padding(8.dp),
+                exportMethod = exportMethod,
+                onBitmapCreated = { bitmapToShow = it },
+                inputComposable = content )
         }
+
+        // do something with the captured image
         if (bitmapToShow == null) {
             Text(
                 "(No bitmap captured right now)",
                 modifier = Modifier.padding(8.dp),
                 style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Cursive, fontSize = 30.sp
+                fontFamily = FontFamily.Cursive,
+                fontSize = 30.sp
             )
         } else {
             Text(
@@ -84,6 +92,7 @@ fun ExampleCaptureImage(modifier: Modifier = Modifier) {
                 textDecoration = TextDecoration.Underline
             )
         }
+
         bitmapToShow?.let { image ->
 
             if (image.asAndroidBitmap().isRecycled) {
@@ -92,50 +101,63 @@ fun ExampleCaptureImage(modifier: Modifier = Modifier) {
             } else {
                 Box(
                     Modifier
-                        .size(250.dp)
                         .border(20.dp, MaterialTheme.colorScheme.secondary)
+                        .size(200.dp)
                         .drawWithContent {
-
                             if (image.asAndroidBitmap().isRecycled) {
-
                                 bitmapToShow = null
-                                Log.w("Example", "Image was recycled")
                             } else {
-
                                 drawImage(
-                                    image, dstSize = IntSize(
+                                    image = image,
+                                    dstSize = IntSize(
                                         this@drawWithContent.size.width.roundToInt(),
                                         this@drawWithContent.size.height.roundToInt()
                                     )
                                 )
                             }
-                        })
+                        }
+                )
             }
             Button(onClick = { bitmapToShow = null }) { Text("clear image") }
-
         }
     }
 }
 
-@Preview
 @Composable
-private fun ImagePreview() {
-    BrushExamplesTheme {
-        DrawImage()
+fun MethodSelectorRadioButtons(
+    modifier: Modifier,
+    value: ExportMethod?,
+    onSetValue: (ExportMethod?) -> Unit,
+    label: String,
+) {
+    var selectedOption: ExportMethod? by remember { mutableStateOf<ExportMethod?>(value) }
+
+    Column(modifier = modifier) {
+        Text(text = label, style = MaterialTheme.typography.titleMedium)
+        ExportMethod.entries.map { exportMethod ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(selected = exportMethod == selectedOption, onClick = {
+                    selectedOption = exportMethod
+                    onSetValue(exportMethod)
+                })
+                Text(exportMethod.name, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
     }
 }
 
+@Stable // because this image does not change and does need to be composed more than once
 @Composable
-private fun DrawImage() {
+internal fun InputContentVectorComposable() {
     val objectToFillImage =
         (LocalContext.current.resources.getDrawable(R.drawable.ic_work_24) as VectorDrawable).toBitmap()
             .asImageBitmap()
     val polkaDotAsDrawable =
         ContextCompat.getDrawable(LocalContext.current, R.drawable.ic_circle_24)
 
-    val polkaDotImageBitmap =
-        (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
-    val polkaDotBrush = remember(polkaDotImageBitmap) {
+    val polkaDotBrush = remember(polkaDotAsDrawable) {
+        val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
         ShaderBrush(
             shader = ImageShader(
                 image = polkaDotImageBitmap,
@@ -160,7 +182,7 @@ private fun DrawImage() {
                     this@drawWithContent.size.height.roundToInt()
                 ),
                 colorFilter = ColorFilter.tint(Color.Red),
-                )
+            )
 
             drawRect(
                 brush = polkaDotBrush,
@@ -171,25 +193,66 @@ private fun DrawImage() {
         })
 }
 
+
+@Stable // because this image does not change and does need to be composed more than once
 @Composable
-private fun LabelledCheckbox(
-    modifier: Modifier,
-    value: Boolean,
-    onSetValue: (Boolean) -> Unit,
-    label: String,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .clip(MaterialTheme.shapes.small)
-            .padding(4.dp)
-    ) {
-        Checkbox(
-            checked = value, onCheckedChange = onSetValue
-        )
-        Spacer(Modifier.size(6.dp))
-        Text(
-            text = label,
-        )
-    }
+internal fun InputContentRasterComposable() {
+
+    val objectToFillImage = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
+
+    Box(modifier = Modifier
+        .padding(4.dp)
+        .size(200.dp)
+        .background(Color.White)
+        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+        .drawWithCache {
+
+            val intervals = 12f
+            val color1 = Color(0xFFE6E2CE)
+            val color2 = Color(0xFF70F1F2)
+
+            val tilted1Brush = object : ShaderBrush() {
+                override fun createShader(size: Size): Shader {
+                    return LinearGradientShader(
+                        colors = listOf(color1, color2),
+                        from = Offset.Zero,
+                        to = Offset(0f, size.height / intervals),
+                        tileMode = TileMode.Mirror
+                    )
+                }
+            }
+
+            val tilted2Brush = object : ShaderBrush() {
+                override fun createShader(size: Size): Shader {
+                    return LinearGradientShader(
+                        colors = listOf(
+                            color1, color2
+                        ),
+                        from = Offset(size.width / intervals, 0f),
+                        to = Offset(0f, 0f),
+                        tileMode = TileMode.Mirror
+                    )
+                }
+            }
+
+            onDrawWithContent {
+                drawRect(
+                    brush = tilted1Brush,
+                    alpha = 1f,
+                )
+                drawRect(
+                    brush = tilted2Brush,
+                    alpha = .5f,
+                )
+                drawImage(
+                    image = objectToFillImage,
+                    blendMode = BlendMode.Modulate,
+                    dstSize = IntSize(
+                        this@onDrawWithContent.size.width.roundToInt(),
+                        this@onDrawWithContent.size.height.roundToInt()
+                    ),
+                )
+
+            }
+        })
 }
