@@ -54,7 +54,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 
-private const val labelShareImage = "Share this image"
+private const val labelExportButton = "Export this image"
 
 enum class ExportMethod {
     ViewDrawCanvas, PixelCopy, GraphicsLayer,
@@ -73,17 +73,17 @@ fun ExportableImageWithCTA(
     onBitmapCreated: (ImageBitmap) -> Unit,
     inputComposable: @Composable () -> Unit,
 ) {
-    val bitmapCapture = remember {
-        BitmapCapture()
+    val bitmapExport = remember {
+        BitmapExport()
     }
-    val onShare: () -> Unit = {
-        bitmapCapture.capture()
+    val onExport: () -> Unit = {
+        bitmapExport.performExport()
     }
 
-    // detect changes in capture state
-    LaunchedEffect(bitmapCapture.captureState.value) {
-        if (bitmapCapture.captureState.value is CaptureState.Success) {
-            onBitmapCreated((bitmapCapture.captureState.value as CaptureState.Success).data.asImageBitmap())
+    // detect changes in export state
+    LaunchedEffect(bitmapExport.exportState.value) {
+        if (bitmapExport.exportState.value is ExportState.Success) {
+            onBitmapCreated((bitmapExport.exportState.value as ExportState.Success).data.asImageBitmap())
         }
     }
 
@@ -94,7 +94,7 @@ fun ExportableImageWithCTA(
                 width = 8f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
             )
         }
-        CaptureContent(modifier = Modifier
+        ContentToExport(modifier = Modifier
             .drawBehind {
                 drawRoundRect(
                     color = Color.Green, style = stroke, cornerRadius = CornerRadius(
@@ -103,29 +103,29 @@ fun ExportableImageWithCTA(
                 )
             }
             .clip(RoundedCornerShape(8.dp)),
-            captureImage = bitmapCapture,
+            exportHandler = bitmapExport,
             exportMethod = exportMethod) {
             inputComposable()
         }
 
-        ShareButton(isEnabled = (exportMethod != null), onShare = onShare)
+        ExportButton(isEnabled = (exportMethod != null), onClick = onExport)
     }
 }
 
 @Composable
-private fun ShareButton(isEnabled: Boolean, onShare: () -> Unit) {
-    Button(modifier = Modifier, enabled = isEnabled, onClick = onShare) {
+private fun ExportButton(isEnabled: Boolean, onClick: () -> Unit) {
+    Button(modifier = Modifier, enabled = isEnabled, onClick = onClick) {
         Icon(
             Icons.Default.Share, contentDescription = null, modifier = Modifier.padding(end = 8.dp)
         )
-        Text(text = labelShareImage)
+        Text(text = labelExportButton)
     }
 }
 
 @Composable
-private fun CaptureContent(
+private fun ContentToExport(
     modifier: Modifier = Modifier,
-    captureImage: BitmapCapture,
+    exportHandler: BitmapExport,
     exportMethod: ExportMethod?,
     content: @Composable () -> Unit,
 ) {
@@ -144,17 +144,17 @@ private fun CaptureContent(
 
         DisposableEffect(method) {
 
-            captureImage.captureBlock = {
+            exportHandler.exportBlock = {
 
                 if (method == ExportMethod.GraphicsLayer) {
 
                     coroutineScope.launch {
                         val image = deferredImage?.await()
                         image?.let {
-                            view.capture(
-                                bounds = Rect.Zero, onCaptured = { _: CaptureState ->
-                                    captureImage.captureState.value =
-                                        CaptureState.Success(data = it.asAndroidBitmap())
+                            view.performExport(
+                                bounds = Rect.Zero, onExported = { _: ExportState ->
+                                    exportHandler.exportState.value =
+                                        ExportState.Success(data = it.asAndroidBitmap())
                                 }, exportMethod = method
                             )
                         }
@@ -166,24 +166,24 @@ private fun CaptureContent(
                         val bounds =
                             if (realBounds.height > maxHeight) realBounds.copy(bottom = realBounds.top + maxHeight)
                             else realBounds
-                        view.capture(
-                            bounds = bounds, onCaptured = { state: CaptureState ->
-                                captureImage.captureState.value = state
+                        view.performExport(
+                            bounds = bounds, onExported = { state: ExportState ->
+                                exportHandler.exportState.value = state
                             }, exportMethod = method
                         )
                     }
                 }
             }
 
-            // Clean up our BitmapCapture
+            // Clean up
             onDispose {
-                captureImage.bitmapState.value?.apply {
+                exportHandler.bitmapState.value?.apply {
                     if (!isRecycled) {
                         recycle()
                     }
                 }
-                captureImage.bitmapState.value = null
-                captureImage.captureBlock = null
+                exportHandler.bitmapState.value = null
+                exportHandler.exportBlock = null
             }
         }
     }
@@ -202,7 +202,7 @@ private fun CaptureContent(
             if (exportMethod == ExportMethod.GraphicsLayer) {
                 Modifier.drawWithContent {
 
-                    // call record to capture the content in the graphics layer
+                    // call record to export the content in the graphics layer
                     graphicsLayer.record {
                         // draw the contents of the composable into the graphics layer
                         this@drawWithContent.drawContent()
@@ -218,25 +218,25 @@ private fun CaptureContent(
     }
 }
 
-private class BitmapCapture {
-    val captureState = mutableStateOf<CaptureState>(CaptureState.Initial)
+private class BitmapExport {
+    val exportState = mutableStateOf<ExportState>(ExportState.Initial)
     val bitmapState = mutableStateOf<Bitmap?>(null)
-    var captureBlock: (() -> Unit)? = null
+    var exportBlock: (() -> Unit)? = null
 
-    fun capture() {
-        captureState.value = CaptureState.Initial // reset
-        captureBlock?.invoke()
+    fun performExport() {
+        exportState.value = ExportState.Initial // reset
+        exportBlock?.invoke()
     }
 }
 
 
 /**
- * Currently only works to capture Composable
+ * Currently only works to export Composable
  * as Bitmap for Activity window, does not work for Dialog window.
  */
-private fun View.capture(
+private fun View.performExport(
     bounds: Rect,
-    onCaptured: (CaptureState) -> Unit,
+    onExported: (ExportState) -> Unit,
     exportMethod: ExportMethod,
 ) {
 
@@ -250,23 +250,23 @@ private fun View.capture(
         )
         when (exportMethod) {
 
-            ExportMethod.PixelCopy -> performPixelCopy(activity, bounds, bitmap, onCaptured)
+            ExportMethod.PixelCopy -> performPixelCopy(activity, bounds, bitmap, onExported)
 
-            ExportMethod.ViewDrawCanvas -> drawToCanvas(bitmap, bounds, onCaptured)
+            ExportMethod.ViewDrawCanvas -> drawToCanvas(bitmap, bounds, onExported)
 
-            // already captured
-            ExportMethod.GraphicsLayer -> onCaptured(CaptureState.Initial)
+            // actual export performed earlier
+            ExportMethod.GraphicsLayer -> onExported(ExportState.Initial)
 
         }
     } catch (e: Exception) {
-        onCaptured(CaptureState.Error(e))
+        onExported(ExportState.Error(e))
     }
 }
 
 private fun View.drawToCanvas(
     bitmap: Bitmap,
     bounds: Rect,
-    onCaptured: (CaptureState) -> Unit,
+    onExported: (ExportState) -> Unit,
 ) {
     val canvas = Canvas(bitmap).apply {
         scale(0.8f, 0.8f)
@@ -275,14 +275,14 @@ private fun View.drawToCanvas(
 
     this.draw(canvas)
     canvas.setBitmap(null)
-    onCaptured(CaptureState.Success(bitmap))
+    onExported(ExportState.Success(bitmap))
 }
 
 private fun performPixelCopy(
     activity: Activity?,
     bounds: Rect,
     bitmap: Bitmap,
-    onCaptured: (CaptureState) -> Unit,
+    onExported: (ExportState) -> Unit,
 ) {
     if (activity != null) {
 
@@ -292,7 +292,7 @@ private fun performPixelCopy(
             ), /* dest = */
             bitmap, /* listener = */
             { status ->
-                onCopyFinished(status, onCaptured, bitmap)
+                onCopyFinished(status, onExported, bitmap)
 
             }, /* listenerThread = */
             Handler(Looper.getMainLooper())
@@ -307,47 +307,47 @@ private fun Context.findActivity(): Activity? = when (this) {
 
 private fun onCopyFinished(
     status: Int,
-    onCaptured: (CaptureState) -> Unit,
+    onExported: (ExportState) -> Unit,
     bitmap: Bitmap,
 ) {
     Log.i("Example", "on copy finished with status $status")
 
     when (status) {
-        PixelCopy.SUCCESS -> onCaptured(CaptureState.Success(bitmap))
-        PixelCopy.ERROR_DESTINATION_INVALID -> onCaptured(
-            CaptureState.Error(
+        PixelCopy.SUCCESS -> onExported(ExportState.Success(bitmap))
+        PixelCopy.ERROR_DESTINATION_INVALID -> onExported(
+            ExportState.Error(
                 Exception(
                     "The destination isn't a valid copy target. " + "If the destination is a bitmap this can occur " + "if the bitmap is too large for the hardware to " + "copy to. " + "It can also occur if the destination " + "has been destroyed"
                 )
             )
         )
 
-        PixelCopy.ERROR_SOURCE_INVALID -> onCaptured(
-            CaptureState.Error(
+        PixelCopy.ERROR_SOURCE_INVALID -> onExported(
+            ExportState.Error(
                 Exception(
                     "It is not possible to copy from the source. " + "This can happen if the source is " + "hardware-protected or destroyed."
                 )
             )
         )
 
-        PixelCopy.ERROR_TIMEOUT -> onCaptured(
-            CaptureState.Error(
+        PixelCopy.ERROR_TIMEOUT -> onExported(
+            ExportState.Error(
                 Exception(
                     "A timeout occurred while trying to acquire a buffer " + "from the source to copy from."
                 )
             )
         )
 
-        PixelCopy.ERROR_SOURCE_NO_DATA -> onCaptured(
-            CaptureState.Error(
+        PixelCopy.ERROR_SOURCE_NO_DATA -> onExported(
+            ExportState.Error(
                 Exception(
                     "The source has nothing to copy from. " + "When the source is a Surface this means that " + "no buffers have been queued yet. " + "Wait for the source to produce " + "a frame and try again."
                 )
             )
         )
 
-        else -> onCaptured(
-            CaptureState.Error(
+        else -> onExported(
+            ExportState.Error(
                 Exception(
                     "The PixelCopy request failed with an unknown error."
                 )

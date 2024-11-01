@@ -4,12 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,8 +25,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import fr.caravellecode.brushexamples.captureImage.ExampleCaptureImage
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import fr.caravellecode.brushexamples.captureImage.ExampleExportImage
 import fr.caravellecode.brushexamples.captureImage.InputContentRasterComposable
 import fr.caravellecode.brushexamples.captureImage.InputContentVectorComposable
 import fr.caravellecode.brushexamples.rasterimage.BrushGradientRasterImage
@@ -36,37 +47,26 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val labels = listOf("Blend 1","Blend 2","Blend 3","Export vector image","Export raster image")
+
                     var pickExample by remember {
-                        mutableIntStateOf(0)
+                        mutableIntStateOf(-1)
                     }
                    Column {
-                       val countButtons = 5
-                       Row(modifier = Modifier.fillMaxWidth()) {
+                       Row(modifier = Modifier.fillMaxWidth(),
+                           verticalAlignment = Alignment.CenterVertically) {
 
-                           Button(modifier = Modifier.weight(weight = (1f/countButtons)),
-                               onClick = { pickExample = 1 }) {
-                               Text(text = "Blend 1")
-                           }
-                           Button(modifier = Modifier.weight(weight = (1f/countButtons)),onClick = { pickExample = 2 }) {
-                               Text(text = "Blend 2")
-                           }
-                           Button(modifier = Modifier.weight(weight = (1f/countButtons)),onClick = { pickExample = 3 }) {
-                               Text(text = "Blend 3")
-                           }
-                           Button(modifier = Modifier.weight(weight = (1f/countButtons)),onClick = { pickExample = 4 }) {
-                               Text(text = "Capture vector image")
-                           }
-                           Button(modifier = Modifier.weight(weight = (1f/countButtons)),onClick = { pickExample = 5 }) {
-                               Text(text = "Capture raster image")
+                           labels.mapIndexed { index: Int, label: String->
+                               PickExampleButton(id = index, onClick = { pickExample = it }, totalButtons = labels.size, label = label)
                            }
                        }
-                       Divider(modifier = Modifier.fillMaxWidth())
+                       HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
                        when (pickExample) {
-                           1 -> BrushPatternRasterImage()
-                           2 -> BrushGradientRasterImage()
-                           3 -> BrushPatternRasterImageWithHighlight()
-                           4 -> ExampleCaptureImage(content = { InputContentVectorComposable() })
-                           5 -> ExampleCaptureImage(content = { InputContentRasterComposable() })
+                           0 -> BrushPatternRasterImage()
+                           1 -> BrushGradientRasterImage()                                       
+                           2 -> BrushPatternRasterImageWithHighlight()                           
+                           3 -> ExampleExportImage(content = { InputContentVectorComposable() }) 
+                           4 -> ExampleExportImage(content = { InputContentRasterComposable() }) 
                            else -> ShowText()
                        }
                    }
@@ -76,6 +76,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun RowScope.PickExampleButton(modifier: Modifier = Modifier, label: String, id: Int, totalButtons: Int, onClick: (Int) -> Unit) {
+
+    OutlinedButton (modifier = Modifier.padding(4.dp).weight(weight = (1f / totalButtons)),
+        onClick = { onClick(id) },
+        contentPadding = PaddingValues(4.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+    ) {
+        Text(modifier = Modifier.fillMaxWidth(), text = label, textAlign = TextAlign.Center)
+
+    }
+}
 @Composable
 fun ShowText() {
     Text(text = "Click on a button to see example")

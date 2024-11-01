@@ -48,7 +48,7 @@ import fr.caravellecode.brushexamples.R
 import kotlin.math.roundToInt
 
 @Composable
-internal fun ExampleCaptureImage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun ExampleExportImage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 
     var bitmapToShow by remember { mutableStateOf<ImageBitmap?>(null) }
     var exportMethod by remember { mutableStateOf<ExportMethod?>(null) }
@@ -76,10 +76,10 @@ internal fun ExampleCaptureImage(modifier: Modifier = Modifier, content: @Compos
             )
         }
 
-        // do something with the captured image
+        // do something with the exported image
         if (bitmapToShow == null) {
             Text(
-                "(No bitmap captured right now)",
+                "(No exported bitmap available)",
                 modifier = Modifier.padding(8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Cursive,
@@ -87,7 +87,7 @@ internal fun ExampleCaptureImage(modifier: Modifier = Modifier, content: @Compos
             )
         } else {
             Text(
-                "Captured image:",
+                "Exported image:",
                 modifier = Modifier.padding(8.dp),
                 style = MaterialTheme.typography.titleLarge,
                 textDecoration = TextDecoration.Underline
