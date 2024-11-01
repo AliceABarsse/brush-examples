@@ -53,8 +53,10 @@ import kotlin.math.roundToInt
 @Composable
 fun BrushPatternVectorImage(modifier: Modifier = Modifier) {
 
-    val objectToDrawOnAsDrawable = ContextCompat.getDrawable( LocalContext.current, R.drawable.ic_work_24)
-    val polkaDotAsDrawable =ContextCompat.getDrawable( LocalContext.current, R.drawable.baseline_circle_4)
+    val objectToDrawOnAsDrawable =
+        ContextCompat.getDrawable(LocalContext.current, R.drawable.ic_work_24)
+    val polkaDotAsDrawable =
+        ContextCompat.getDrawable(LocalContext.current, R.drawable.baseline_circle_4)
     val objectToDrawOnAsImageBitmap =
         (objectToDrawOnAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
     val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
@@ -94,7 +96,7 @@ fun BrushPatternVectorImage(modifier: Modifier = Modifier) {
                                 brush = polkaDotBrush,
                                 alpha = 1f,
                                 colorFilter = ColorFilter.tint(polkaDotColor),
-                                )
+                            )
                             drawImage(
                                 image = objectToDrawOnAsImageBitmap,
                                 dstSize = IntSize(
@@ -103,7 +105,7 @@ fun BrushPatternVectorImage(modifier: Modifier = Modifier) {
                                 ),
                                 colorFilter = ColorFilter.tint(Color.Red),
                                 blendMode = blendMode,
-                                )
+                            )
                         }) {
 
                         // Box content intentionally left blank
@@ -188,8 +190,7 @@ fun BrushGradientImage(modifier: Modifier = Modifier) {
             override fun createShader(size: Size): Shader {
                 return LinearGradientShader(
                     colors = listOf(
-                        Color.DarkGray.copy(alpha = 0.6f),
-                        Color.Black.copy(alpha = 0.4f)
+                        Color.DarkGray.copy(alpha = 0.6f), Color.Black.copy(alpha = 0.4f)
                     ),
                     from = Offset(size.width / intervals, 0f),
                     to = Offset(0f, size.height / intervals),

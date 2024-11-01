@@ -3,13 +3,19 @@ package fr.caravellecode.brushexamples.captureImage
 import android.graphics.drawable.VectorDrawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -21,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -48,33 +53,47 @@ import fr.caravellecode.brushexamples.R
 import kotlin.math.roundToInt
 
 @Composable
-internal fun ExampleExportImage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun ExampleExportImage(modifier: Modifier = Modifier, content: @Composable (Boolean) -> Unit) {
 
     var bitmapToShow by remember { mutableStateOf<ImageBitmap?>(null) }
     var exportMethod by remember { mutableStateOf<ExportMethod?>(null) }
-
+    var addBlendedMotif by remember {
+        mutableStateOf(false)
+    }
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            // Parameter describing the export method
-            MethodSelectorRadioButtons(
-                Modifier.padding(4.dp),
-                value = exportMethod,
-                onSetValue = { exportMethod = it },
-                label = "Select an export method"
-            )
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+
+            Column (modifier = Modifier.fillMaxHeight().weight(0.5f),
+                verticalArrangement = Arrangement.SpaceBetween) {
+                // Parameter describing the export method
+                MethodSelectorRadioButtons(
+                    Modifier.padding(4.dp),
+                    value = exportMethod,
+                    onSetValue = { exportMethod = it },
+                    label = "Select an export method"
+                )
+                AddMotifLayerCheckBox(
+                    modifier = Modifier.padding(4.dp),
+                    value = addBlendedMotif,
+                    onSetValue = { addBlendedMotif = it},
+                    label = "Additional blending"
+                )
+            }
 
             // Wrap the content to share in this composable
             ExportableImageWithCTA(
-                modifier = modifier.padding(8.dp),
+                modifier = Modifier.weight(0.5f).padding(8.dp),
                 exportMethod = exportMethod,
                 onBitmapCreated = { bitmapToShow = it },
-                inputComposable = content
+                inputComposable = { content(addBlendedMotif) }
             )
         }
+
+        HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(4.dp))
 
         // do something with the exported image
         if (bitmapToShow == null) {
@@ -125,6 +144,15 @@ internal fun ExampleExportImage(modifier: Modifier = Modifier, content: @Composa
 }
 
 @Composable
+fun AddMotifLayerCheckBox(modifier: Modifier, value: Boolean, onSetValue: (Boolean) -> Unit, label: String) {
+    Text(modifier = modifier, text = label, style = MaterialTheme.typography.titleMedium)
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = value, onCheckedChange = onSetValue)
+        Text("Add a blended motif to image")
+    }
+}
+
+@Composable
 fun MethodSelectorRadioButtons(
     modifier: Modifier,
     value: ExportMethod?,
@@ -148,77 +176,26 @@ fun MethodSelectorRadioButtons(
     }
 }
 
-@Stable // because this image does not change and does need to be composed more than once
 @Composable
-internal fun InputContentVectorComposable(drawObjectFirst: Boolean) {
-    val objectToFillImage =
-        (LocalContext.current.resources.getDrawable(R.drawable.ic_work_24) as VectorDrawable).toBitmap()
+internal fun InputContentVectorComposable(drawObjectFirst: Boolean, addBlendedMotif: Boolean) {
+
+    val vectorImageBitmap = (LocalContext.current.getDrawable(R.drawable.ic_work_24) as VectorDrawable).toBitmap()
             .asImageBitmap()
-    val polkaDotAsDrawable =
-        ContextCompat.getDrawable(LocalContext.current, R.drawable.ic_circle_24)
-
-    val polkaDotBrush = remember(polkaDotAsDrawable) {
-        val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
-        ShaderBrush(
-            shader = ImageShader(
-                image = polkaDotImageBitmap,
-                tileModeX = TileMode.Repeated,
-                tileModeY = TileMode.Repeated
-            )
-        )
-    }
-    val polkaDotColor = Color.Black
-    val objectColor = Color.Red
-
-    Box(modifier = Modifier
-        .background(Color.White)
-        .padding(4.dp)
-        .size(200.dp)
-        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-        .drawWithContent {
-
-            if (drawObjectFirst) {
-                drawImage(
-                    image = objectToFillImage,
-                    dstSize = IntSize(
-                        this@drawWithContent.size.width.roundToInt(),
-                        this@drawWithContent.size.height.roundToInt()
-                    ),
-                    colorFilter = ColorFilter.tint(objectColor),
-                )
-                drawRect(
-                    brush = polkaDotBrush,
-                    alpha = 1f,
-                    colorFilter = ColorFilter.tint(polkaDotColor),
-                    blendMode = BlendMode.SrcAtop,
-                )
-            } else {
-
-                drawRect(
-                    brush = polkaDotBrush,
-                    alpha = 1f,
-                    colorFilter = ColorFilter.tint(polkaDotColor),
-                )
-                drawImage(
-                    image = objectToFillImage,
-                    blendMode = BlendMode.DstAtop,
-                    colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
-                    dstSize = IntSize(
-                        this@drawWithContent.size.width.roundToInt(),
-                        this@drawWithContent.size.height.roundToInt()
-                    ),
-                )
-
-            }
-        })
+    InputContentComposable(drawObjectFirst, vectorImageBitmap, addBlendedMotif = addBlendedMotif)
 }
 
-
 @Stable // because this image does not change and does need to be composed more than once
 @Composable
-internal fun InputContentRasterComposable(drawObjectFirst: Boolean) {
+internal fun InputContentRasterComposable(drawObjectFirst: Boolean, addBlendedMotif: Boolean) {
 
-    val objectToFillImage = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
+    val rasterImageBitmap = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
+    InputContentComposable(drawObjectFirst, rasterImageBitmap, addBlendedMotif = addBlendedMotif)
+}
+
+@Stable
+@Composable
+private fun InputContentComposable(drawObjectFirst: Boolean, sourceImageBitmap: ImageBitmap, addBlendedMotif: Boolean) {
+
     val polkaDotAsDrawable =
         ContextCompat.getDrawable(LocalContext.current, R.drawable.ic_circle_24)
 
@@ -240,44 +217,46 @@ internal fun InputContentRasterComposable(drawObjectFirst: Boolean) {
         .padding(4.dp)
         .size(200.dp)
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-        .drawWithCache {
+        .drawWithContent {
 
-            onDrawWithContent {
-                if (drawObjectFirst) {
-                    drawImage(
-                        image = objectToFillImage,
-                        dstSize = IntSize(
-                            this@onDrawWithContent.size.width.roundToInt(),
-                            this@onDrawWithContent.size.height.roundToInt()
-                        ),
-                        colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
-                    )
+            if (drawObjectFirst) {
+                drawImage(
+                    image = sourceImageBitmap,
+                    dstSize = IntSize(
+                        this@drawWithContent.size.width.roundToInt(),
+                        this@drawWithContent.size.height.roundToInt()
+                    ),
+                    colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
+                )
+                if (addBlendedMotif) {
                     drawRect(
                         brush = polkaDotBrush,
+                        alpha = 1f,
                         colorFilter = ColorFilter.tint(polkaDotColor),
                         blendMode = BlendMode.SrcAtop,
                     )
-                } else {
+                }
+            } else {
 
+                if (addBlendedMotif) {
                     drawRect(
                         brush = polkaDotBrush,
                         alpha = 1f,
                         colorFilter = ColorFilter.tint(polkaDotColor),
                     )
-                    drawImage(
-                        image = objectToFillImage,
-                        blendMode = BlendMode.DstAtop,
-                        colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
-                        dstSize = IntSize(
-                            this@onDrawWithContent.size.width.roundToInt(),
-                            this@onDrawWithContent.size.height.roundToInt()
-                        ),
-                    )
-
                 }
 
-
+                drawImage(
+                    image = sourceImageBitmap,
+                    blendMode = BlendMode.DstAtop,
+                    colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
+                    dstSize = IntSize(
+                        this@drawWithContent.size.width.roundToInt(),
+                        this@drawWithContent.size.height.roundToInt()
+                    ),
+                )
 
             }
         })
 }
+

@@ -29,7 +29,7 @@ private fun PickExampleButtonPreview() {
 @Composable
 private fun RasterImagePreview() {
     BrushExamplesTheme {
-        InputContentRasterComposable(true)
+        InputContentRasterComposable(true, true)
     }
 }
 
@@ -37,7 +37,7 @@ private fun RasterImagePreview() {
 @Composable
 private fun VectorImagePreview() {
     BrushExamplesTheme {
-        InputContentVectorComposable(true)
+        InputContentVectorComposable(true, true)
     }
 }
 
@@ -46,6 +46,6 @@ private fun VectorImagePreview() {
 @Composable
 private fun ExampleCaptureImagePreview() {
     BrushExamplesTheme {
-        ExampleExportImage(content = { InputContentVectorComposable(true) })
+        ExampleExportImage(content = { InputContentVectorComposable(true, true) })
     }
 }
