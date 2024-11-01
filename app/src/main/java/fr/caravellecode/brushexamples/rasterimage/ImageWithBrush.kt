@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -105,30 +105,30 @@ fun BrushPatternRasterImage(modifier: Modifier = Modifier) {
     val tintColor = Black
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState(), true)) {
-        WriteTitleName(titleName = "Draw Raster Image with an all-over dot pattern \nand some tint, varying BlendMode")
+        WriteTitleName(titleName = "Draw Raster Image in Black with an all-over Red dot pattern, varying BlendMode")
 
         FlowRow(
             modifier = Modifier.background(LightGray),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            for (blendModeImage in listOfAllBlendModes().filter {
-                    listOf(
-                        Clear,
-                        Dst,
-                        DstIn,
-                        DstOut,
-                        DstOver,
-                        Modulate,
-                        Softlight,
-                        Src,
-                        SrcAtop,
-                        SrcIn,
-                        SrcOver,
-                        Xor
-                    ).contains(it).not()
-                }) {
+            for (blendModeImage in listOfAllBlendModes().filterNot {
+                listOf(
+                    Clear,
+                    Dst,
+                    DstIn,
+                    DstOut,
+                    DstOver,
+                    Modulate,
+                    Softlight,
+                    Src,
+                    SrcAtop,
+                    SrcIn,
+                    SrcOver,
+                    Xor
+                ).contains(it)
+            }) {
 
-                for (blendModeColor in allBlendModes().filterNot {
+                for (blendModeColor in listOfAllBlendModes().filterNot {
                     listOf(
                         Clear,
                         Difference,
@@ -148,78 +148,50 @@ fun BrushPatternRasterImage(modifier: Modifier = Modifier) {
                         Xor,
                     ).contains(it)
                 }) {
-                    for (blendModeMotif in allBlendModes().filterNot {
-                        listOf(
-                            Clear,
-                            Difference,
-                            Dst,
-                            DstAtop,
-                            DstIn,
-                            DstOut,
-                            DstOver,
-                            Exclusion,
-                            Hardlight,
-                            Hue,
-                            Luminosity,
-                            Saturation,
-                            Src,
-                            SrcAtop,
-                            SrcIn,
-                            SrcOut,
-                            Xor,
-                        ).contains(it)
-                    }) {
 
+                    Column(
+                        modifier = Modifier
+                            .width(intrinsicSize = IntrinsicSize.Min)
+                            .padding(4.dp)
+                            .border(Dp.Hairline, Black),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        ShowValueText("img: $blendModeImage")
+                        ShowValueText("col: $blendModeColor")
 
-                        Column(
-                            modifier = Modifier
-                                .width(intrinsicSize = IntrinsicSize.Min)
-                                .padding(4.dp)
-                                .border(Dp.Hairline, Black),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            ShowValueText("img: $blendModeImage")
-                            ShowValueText("col: $blendModeColor")
-                            ShowValueText("motif tint: $blendModeMotif")
-
-                            Box(modifier = Modifier
-                                .size(90.dp)
-                                .graphicsLayer {
-                                    compositingStrategy = CompositingStrategy.Offscreen
-                                }
-                                .drawWithContent {
-                                    drawRect(
-                                        brush = polkaDotBrush,
-                                        alpha = 1f,
-                                        colorFilter = ColorFilter.tint(
-                                            polkaDotColor, blendModeMotif
-                                        )
-                                    )
-                                    drawImage(
-                                        image = objectToDrawOnAsImageBitmap,
-                                        blendMode = blendModeImage,
-                                        dstSize = IntSize(
-                                            this@drawWithContent.size.width.roundToInt(),
-                                            this@drawWithContent.size.height.roundToInt()
-                                        ),
-                                        colorFilter = ColorFilter.tint(
-                                            tintColor, blendModeColor
-                                        ),
-                                    )
-                                }) // Box content intentionally left blank
-                        }
-
+                        Box(modifier = Modifier
+                            .size(90.dp)
+                            .graphicsLayer {
+                                compositingStrategy = CompositingStrategy.Offscreen
+                            }
+                            .drawWithContent {
+                                drawRect(
+                                    brush = polkaDotBrush,
+                                    alpha = 1f,
+                                    colorFilter = ColorFilter.tint(polkaDotColor)
+                                )
+                                drawImage(
+                                    image = objectToDrawOnAsImageBitmap,
+                                    blendMode = blendModeImage,
+                                    dstSize = IntSize(
+                                        this@drawWithContent.size.width.roundToInt(),
+                                        this@drawWithContent.size.height.roundToInt()
+                                    ),
+                                    colorFilter = ColorFilter.tint(
+                                        tintColor, blendModeColor
+                                    ),
+                                )
+                            }) // Box content intentionally left blank
                     }
 
                 }
-
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.primary,
+                    thickness = 1.dp,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
             }
-            Divider(
-                color = MaterialTheme.colorScheme.primary,
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
@@ -437,7 +409,7 @@ fun BrushPatternRasterImageWithHighlight(modifier: Modifier = Modifier) {
     val selected = mutableListOf<String>()
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState(), true)) {
-        WriteTitleName(titleName = "Draw Raster Image with an all-over White dot pattern \nand darkBlue tint, varying BlendMode")
+        WriteTitleName(titleName = "Draw Raster Image in White with an all-over Red dot pattern, varying BlendMode, and Highlight layer")
         FlowRow(
             modifier = Modifier.background(Green),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -463,15 +435,8 @@ fun BrushPatternRasterImageWithHighlight(modifier: Modifier = Modifier) {
                     SrcIn,
                     SrcOut,
                     Xor,
-                    /*
-                    DstOver,
-                    Exclusion,
-                    SrcAtop,
-                    SrcOver,
-                     */
                 ).contains(it)
             }) {
-
 
                 for (blendModeMotifRect in allBlendModes().filterNot {
                     listOf(
@@ -491,10 +456,6 @@ fun BrushPatternRasterImageWithHighlight(modifier: Modifier = Modifier) {
                         SrcOut,
                         SrcOver,
                         Xor,
-                        /*
-                        SrcAtop,
-                        SrcIn,
-                         */
                     ).contains(it)
                 }) {
 
@@ -504,20 +465,6 @@ fun BrushPatternRasterImageWithHighlight(modifier: Modifier = Modifier) {
                             Dst,
                             SrcOut,
                             Xor,
-
-                            /* DstAtop,
-                             DstIn,
-                             DstOut,
-                             DstOver,
-                             Hardlight,
-                             Hue,
-                             Luminosity,
-                             Saturation,
-                             Src,
-                             SrcAtop,
-                             SrcIn,
-                             SrcOver,
-                             */
                         ).contains(it)
                     }) {
 
@@ -586,7 +533,7 @@ fun BrushPatternRasterImageWithHighlight(modifier: Modifier = Modifier) {
                     } //  loop
 
                 }
-                Divider(
+                HorizontalDivider(
                     color = MaterialTheme.colorScheme.primary,
                     thickness = 1.dp,
                     modifier = Modifier.fillMaxWidth()
