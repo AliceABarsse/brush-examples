@@ -150,7 +150,7 @@ fun MethodSelectorRadioButtons(
 
 @Stable // because this image does not change and does need to be composed more than once
 @Composable
-internal fun InputContentVectorComposable() {
+internal fun InputContentVectorComposable(drawObjectFirst: Boolean) {
     val objectToFillImage =
         (LocalContext.current.resources.getDrawable(R.drawable.ic_work_24) as VectorDrawable).toBitmap()
             .asImageBitmap()
@@ -168,6 +168,7 @@ internal fun InputContentVectorComposable() {
         )
     }
     val polkaDotColor = Color.Black
+    val objectColor = Color.Red
 
     Box(modifier = Modifier
         .background(Color.White)
@@ -176,28 +177,46 @@ internal fun InputContentVectorComposable() {
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
         .drawWithContent {
 
-            drawImage(
-                image = objectToFillImage,
-                dstSize = IntSize(
-                    this@drawWithContent.size.width.roundToInt(),
-                    this@drawWithContent.size.height.roundToInt()
-                ),
-                colorFilter = ColorFilter.tint(Color.Red),
-            )
+            if (drawObjectFirst) {
+                drawImage(
+                    image = objectToFillImage,
+                    dstSize = IntSize(
+                        this@drawWithContent.size.width.roundToInt(),
+                        this@drawWithContent.size.height.roundToInt()
+                    ),
+                    colorFilter = ColorFilter.tint(objectColor),
+                )
+                drawRect(
+                    brush = polkaDotBrush,
+                    alpha = 1f,
+                    colorFilter = ColorFilter.tint(polkaDotColor),
+                    blendMode = BlendMode.SrcAtop,
+                )
+            } else {
 
-            drawRect(
-                brush = polkaDotBrush,
-                alpha = 1f,
-                colorFilter = ColorFilter.tint(polkaDotColor),
-                blendMode = BlendMode.SrcAtop,
-            )
+                drawRect(
+                    brush = polkaDotBrush,
+                    alpha = 1f,
+                    colorFilter = ColorFilter.tint(polkaDotColor),
+                )
+                drawImage(
+                    image = objectToFillImage,
+                    blendMode = BlendMode.DstAtop,
+                    colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
+                    dstSize = IntSize(
+                        this@drawWithContent.size.width.roundToInt(),
+                        this@drawWithContent.size.height.roundToInt()
+                    ),
+                )
+
+            }
         })
 }
 
 
 @Stable // because this image does not change and does need to be composed more than once
 @Composable
-internal fun InputContentRasterComposable() {
+internal fun InputContentRasterComposable(drawObjectFirst: Boolean) {
 
     val objectToFillImage = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
     val polkaDotAsDrawable =
@@ -213,7 +232,8 @@ internal fun InputContentRasterComposable() {
             )
         )
     }
-    val polkaDotColor = Color.Blue
+    val polkaDotColor = Color.Black
+    val objectColor = Color.Red
 
     Box(modifier = Modifier
         .background(Color.Green)
@@ -222,23 +242,41 @@ internal fun InputContentRasterComposable() {
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
         .drawWithCache {
 
-            val objectColor = Color.DarkGray
-
             onDrawWithContent {
-                drawRect(
-                    brush = polkaDotBrush,
-                    alpha = 1f,
-                    colorFilter = ColorFilter.tint(polkaDotColor),
-                )
-                drawImage(
-                    image = objectToFillImage,
-                    blendMode = BlendMode.DstAtop,
-                    colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
-                    dstSize = IntSize(
-                        this@onDrawWithContent.size.width.roundToInt(),
-                        this@onDrawWithContent.size.height.roundToInt()
-                    ),
-                )
+                if (drawObjectFirst) {
+                    drawImage(
+                        image = objectToFillImage,
+                        dstSize = IntSize(
+                            this@onDrawWithContent.size.width.roundToInt(),
+                            this@onDrawWithContent.size.height.roundToInt()
+                        ),
+                        colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
+                    )
+                    drawRect(
+                        brush = polkaDotBrush,
+                        colorFilter = ColorFilter.tint(polkaDotColor),
+                        blendMode = BlendMode.SrcAtop,
+                    )
+                } else {
+
+                    drawRect(
+                        brush = polkaDotBrush,
+                        alpha = 1f,
+                        colorFilter = ColorFilter.tint(polkaDotColor),
+                    )
+                    drawImage(
+                        image = objectToFillImage,
+                        blendMode = BlendMode.DstAtop,
+                        colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
+                        dstSize = IntSize(
+                            this@onDrawWithContent.size.width.roundToInt(),
+                            this@onDrawWithContent.size.height.roundToInt()
+                        ),
+                    )
+
+                }
+
+
 
             }
         })

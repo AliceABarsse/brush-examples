@@ -65,8 +65,8 @@ class MainActivity : ComponentActivity() {
                            0 -> BrushPatternRasterImage()
                            1 -> BrushGradientRasterImage()                                       
                            2 -> BrushPatternRasterImageWithHighlight()                           
-                           3 -> ExampleExportImage(content = { InputContentVectorComposable() }) 
-                           4 -> ExampleExportImage(content = { InputContentRasterComposable() }) 
+                           3 -> ExampleExportImage(content = { InputContentVectorComposable(true) })
+                           4 -> ExampleExportImage(content = { InputContentRasterComposable(false) })
                            else -> ShowText()
                        }
                    }
