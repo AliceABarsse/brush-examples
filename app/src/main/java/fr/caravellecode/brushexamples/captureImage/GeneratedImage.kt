@@ -23,16 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
-import androidx.compose.ui.graphics.LinearGradientShader
-import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -42,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,9 +53,11 @@ internal fun ExampleCaptureImage(modifier: Modifier = Modifier, content: @Compos
     var bitmapToShow by remember { mutableStateOf<ImageBitmap?>(null) }
     var exportMethod by remember { mutableStateOf<ExportMethod?>(null) }
 
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .background(MaterialTheme.colorScheme.surface)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+    ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             // Parameter describing the export method
             MethodSelectorRadioButtons(
@@ -69,10 +68,12 @@ internal fun ExampleCaptureImage(modifier: Modifier = Modifier, content: @Compos
             )
 
             // Wrap the content to share in this composable
-            ExportableImageWithCTA(modifier = modifier.padding(8.dp),
+            ExportableImageWithCTA(
+                modifier = modifier.padding(8.dp),
                 exportMethod = exportMethod,
                 onBitmapCreated = { bitmapToShow = it },
-                inputComposable = content )
+                inputComposable = content
+            )
         }
 
         // do something with the captured image
@@ -101,7 +102,7 @@ internal fun ExampleCaptureImage(modifier: Modifier = Modifier, content: @Compos
             } else {
                 Box(
                     Modifier
-                        .border(20.dp, MaterialTheme.colorScheme.secondary)
+                        .border(Dp.Hairline, MaterialTheme.colorScheme.secondary)
                         .size(200.dp)
                         .drawWithContent {
                             if (image.asAndroidBitmap().isRecycled) {
@@ -199,54 +200,40 @@ internal fun InputContentVectorComposable() {
 internal fun InputContentRasterComposable() {
 
     val objectToFillImage = ImageBitmap.imageResource(id = R.drawable.ic_chair_foreground)
+    val polkaDotAsDrawable =
+        ContextCompat.getDrawable(LocalContext.current, R.drawable.ic_circle_24)
+
+    val polkaDotBrush = remember(polkaDotAsDrawable) {
+        val polkaDotImageBitmap = (polkaDotAsDrawable as VectorDrawable).toBitmap().asImageBitmap()
+        ShaderBrush(
+            shader = ImageShader(
+                image = polkaDotImageBitmap,
+                tileModeX = TileMode.Repeated,
+                tileModeY = TileMode.Repeated
+            )
+        )
+    }
+    val polkaDotColor = Color.Blue
 
     Box(modifier = Modifier
+        .background(Color.Green)
         .padding(4.dp)
         .size(200.dp)
-        .background(Color.White)
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
         .drawWithCache {
 
-            val intervals = 12f
-            val color1 = Color(0xFFE6E2CE)
-            val color2 = Color(0xFF70F1F2)
-
-            val tilted1Brush = object : ShaderBrush() {
-                override fun createShader(size: Size): Shader {
-                    return LinearGradientShader(
-                        colors = listOf(color1, color2),
-                        from = Offset.Zero,
-                        to = Offset(0f, size.height / intervals),
-                        tileMode = TileMode.Mirror
-                    )
-                }
-            }
-
-            val tilted2Brush = object : ShaderBrush() {
-                override fun createShader(size: Size): Shader {
-                    return LinearGradientShader(
-                        colors = listOf(
-                            color1, color2
-                        ),
-                        from = Offset(size.width / intervals, 0f),
-                        to = Offset(0f, 0f),
-                        tileMode = TileMode.Mirror
-                    )
-                }
-            }
+            val objectColor = Color.DarkGray
 
             onDrawWithContent {
                 drawRect(
-                    brush = tilted1Brush,
+                    brush = polkaDotBrush,
                     alpha = 1f,
-                )
-                drawRect(
-                    brush = tilted2Brush,
-                    alpha = .5f,
+                    colorFilter = ColorFilter.tint(polkaDotColor),
                 )
                 drawImage(
                     image = objectToFillImage,
-                    blendMode = BlendMode.Modulate,
+                    blendMode = BlendMode.DstAtop,
+                    colorFilter = ColorFilter.tint(objectColor, BlendMode.Modulate),
                     dstSize = IntSize(
                         this@onDrawWithContent.size.width.roundToInt(),
                         this@onDrawWithContent.size.height.roundToInt()

@@ -160,6 +160,7 @@ fun BrushPatternRasterImage(modifier: Modifier = Modifier) {
                         ShowValueText("col: $blendModeColor")
 
                         Box(modifier = Modifier
+                            .background(Green)
                             .size(90.dp)
                             .graphicsLayer {
                                 compositingStrategy = CompositingStrategy.Offscreen
