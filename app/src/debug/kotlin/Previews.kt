@@ -6,9 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import fr.caravellecode.brushexamples.captureImage.ExampleExportImage
-import fr.caravellecode.brushexamples.captureImage.InputContentRasterComposable
-import fr.caravellecode.brushexamples.captureImage.InputContentVectorComposable
 import fr.caravellecode.brushexamples.ui.theme.BrushExamplesTheme
 
 
@@ -25,27 +22,3 @@ private fun PickExampleButtonPreview() {
     }
 }
 
-@Preview
-@Composable
-private fun RasterImagePreview() {
-    BrushExamplesTheme {
-        InputContentRasterComposable(true, true)
-    }
-}
-
-@Preview
-@Composable
-private fun VectorImagePreview() {
-    BrushExamplesTheme {
-        InputContentVectorComposable(true, true)
-    }
-}
-
-
-@Preview
-@Composable
-private fun ExampleCaptureImagePreview() {
-    BrushExamplesTheme {
-        ExampleExportImage(content = { InputContentVectorComposable(true, true) })
-    }
-}
